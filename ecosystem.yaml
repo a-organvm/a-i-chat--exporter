@@ -1,0 +1,7 @@
+schema_version: '1.0'
+repo: a-i-chat--exporter
+organ: III
+display_name: Export and share AI chat conversation history (fork of chatgpt-exporter)
+delivery:
+- platform: web_app
+  status: not_started
