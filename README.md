@@ -128,6 +128,27 @@ Supporting modules handle cross-cutting concerns:
 - **`dom.ts`** — DOM utilities including blob-to-data-URL conversion.
 - **`memorize.ts`** — Memoization wrapper for expensive single-call functions (session fetch, account check).
 
+### Architecture: providers
+
+The conversation source is abstracted behind a `Provider` interface in
+`src/providers/`. Each provider knows how to read conversations out of one host
+(ChatGPT, and — scaffolded — Claude and Gemini) and normalize them into the
+shared `ConversationResult` the exporters already consume:
+
+- `src/providers/types.ts` — the `Provider` interface, re-exporting the existing
+  data types from `src/api.ts` (no duplication).
+- `src/providers/chatgpt.ts` — `chatgptProvider`, a thin wrapper that delegates
+  to `src/api.ts`. ChatGPT behavior is unchanged.
+- `src/providers/claude.ts`, `src/providers/gemini.ts` — scaffolds whose methods
+  throw `NotImplemented` and whose top-of-file comments document the exact
+  extraction points a future implementer must fill against a live session.
+- `src/providers/index.ts` — the registry and `getActiveProvider(host)`, which
+  picks a provider by `location.host` and falls back to `chatgptProvider`.
+
+This is foundation only: the existing UI still calls `src/api.ts` directly, so
+behavior is identical today. Live Claude/Gemini extraction is intentionally
+deferred (it needs real sessions to map their conversation shapes).
+
 ### Build Pipeline
 
 The project uses Vite with `@preact/preset-vite` for JSX transformation and `vite-plugin-monkey` for userscript packaging. External dependencies (JSZip, html2canvas) are loaded from jsDelivr CDN at runtime to keep the script bundle small. The build produces a single `dist/chatgpt.user.js` file that Tampermonkey can install directly.

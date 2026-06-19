@@ -59,7 +59,7 @@
     "@pionxzh/eslint-config": "^1.0.1",
     "@preact/preset-vite": "^2.8.3",
     "@types/katex": "^0.16.7",
-    "@types/mdast": "^4.0.4",
+    "@types/mdast": "^3.0.15",
     "@types/node": "^20.11.20",
     "@types/unist": "^2.0.10",
     "eslint": "^8.57.0",
