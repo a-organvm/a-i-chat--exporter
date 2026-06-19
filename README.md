@@ -23,7 +23,7 @@ ChatGPT Exporter lives inside ORGAN-III (Ergon), the commerce and product organ 
 
 - [Product Overview](#product-overview)
 - [Why This Tool Exists](#why-this-tool-exists)
-- [Support / Pro](#support--pro)
+- [Pricing and Monetization](#pricing-and-monetization)
 - [Technical Architecture](#technical-architecture)
 - [Supported Export Formats](#supported-export-formats)
 - [Installation](#installation)
@@ -49,7 +49,7 @@ The tool is also available through [GreasyFork](https://greasyfork.org/scripts/4
 ### What It Does
 
 - **Single conversation export** — One-click export of the currently open conversation in any of five formats.
-- **Bulk conversation export** — Select multiple conversations (or all of them) and export as a ZIP archive. Supports Markdown, HTML, JSON, and the official OpenAI JSON schema.
+- **Bulk conversation export** *(Pro)* — Select multiple conversations (or all of them) and export as a ZIP archive. Supports Markdown, HTML, JSON, and the official OpenAI JSON schema.
 - **Official export file import** — Upload a `conversations.json` file downloaded from OpenAI's data export feature, then re-export it in more useful formats.
 - **Project-scoped export** — Filter and export conversations belonging to specific ChatGPT Projects (OpenAI's "Gizmos" system).
 - **Conversation management** — Archive or delete conversations in bulk directly from the export dialog.
@@ -75,11 +75,47 @@ The design philosophy is zero-friction: no accounts, no servers, no cloud depend
 
 ---
 
-## Support / Pro
+## Pricing and Monetization
 
-ChatGPT Exporter is free and open-source. If it saves you time, the lowest-friction way to support the project today is to [sponsor on GitHub](https://github.com/sponsors/4444J99) or [buy me a coffee](https://ko-fi.com/4444J99).
+ChatGPT Exporter is **free and open-source** at its core. The userscript installs from GreasyFork or GitHub, runs entirely in your browser, and never asks for an account. There is no paywall on the everyday workflow: opening a conversation and exporting it to Markdown, HTML, JSON, PNG, or text is — and stays — free.
 
-**AI Chat Exporter Pro** is the paid tier for people who need heavier archival workflows. Pro is planned as a $19 one-time license through the [hosted checkout](https://aichatexporter.com/pro), unlocking bulk export, multi-provider export for ChatGPT, Claude, and Gemini, and premium formats including Markdown, JSON, HTML, and PDF. The free tier stays focused on single-conversation ChatGPT export with no account, no upload, and local files.
+The project sustains itself through a two-tier model. The free tier covers the individual export workflow that the overwhelming majority of users need. A paid **Pro** tier covers the heavier, batch-oriented workflows that have real costs (maintenance, multi-provider reverse-engineering, support) attached.
+
+### Who Pays
+
+The free tier is built for the casual-to-regular user: someone archiving a handful of conversations, saving a notable thread, or grabbing a screenshot to share. They never need Pro.
+
+Pro is aimed at people for whom export is part of their job or research, and who feel the limits of one-at-a-time export:
+
+- **Researchers and writers** building corpora out of hundreds of conversations.
+- **Developers and knowledge workers** piping bulk exports into note systems, RAG pipelines, or version control.
+- **Multi-platform users** who live across ChatGPT, Claude, and Gemini and want one consistent export path for all of them.
+
+### Tier Comparison
+
+| Capability | Free | Pro |
+|------------|:----:|:---:|
+| Single-conversation export (Markdown, HTML, JSON, PNG, Text) | ✅ | ✅ |
+| Timestamp injection and custom filename templates | ✅ | ✅ |
+| Metadata front matter | ✅ | ✅ |
+| Official `conversations.json` import and re-export | ✅ | ✅ |
+| 9-language localized UI | ✅ | ✅ |
+| No account, no upload, local-only files | ✅ | ✅ |
+| **Bulk export** (select-many / select-all → ZIP archive) | — | ✅ |
+| **Multi-provider export** (ChatGPT + Claude + Gemini) | — | ✅ |
+| Priority support | — | ✅ |
+
+The two Pro capabilities map directly to the feature flags in the codebase (`PRO_FEATURES` in [`src/ui/SettingContext.tsx`](./src/ui/SettingContext.tsx)): `bulk-export` and `multi-provider-export`.
+
+### Plan and Status
+
+Pro is planned as a **$19 one-time license** (not a subscription) sold through a [hosted checkout](https://aichatexporter.com/pro). After purchase you paste your license key into the settings panel; it is stored locally via Tampermonkey storage and unlocks the Pro features in place.
+
+> **Status — in development.** The license gate currently ships as a local scaffold: `checkLicenseGate()` accepts any non-empty license key. Server-side validation (via Lemon Squeezy) and live Claude/Gemini extraction are the remaining work before Pro is generally available. Multi-provider support is foundation-only today — see [Architecture: providers](#architecture-providers). Until Pro ships, all features described above remain accessible.
+
+### Supporting the Project
+
+If the free tier saves you time and you would rather just chip in, the lowest-friction options are to [sponsor on GitHub](https://github.com/sponsors/4444J99) or [buy me a coffee](https://ko-fi.com/4444J99). Sponsorship is appreciated but never required — the free tier has no nag screens and no feature degradation.
 
 ---
 
@@ -269,6 +305,8 @@ input...
 ---
 
 ## Bulk Export and Conversation Management
+
+> Bulk export is a **Pro** capability — see [Pricing and Monetization](#pricing-and-monetization). Single-conversation export remains free for everyone.
 
 Click **"Export All"** in the sidebar menu to open the bulk export dialog. This dialog provides three workflows:
 
