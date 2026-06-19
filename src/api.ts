@@ -1,55 +1,8 @@
 import urlcat from 'urlcat'
-import { requireExporterApiAuth } from './auth'
 import { apiUrl, baseUrl } from './constants'
 import { getChatIdFromUrl, getConversationFromSharePage, getPageAccessToken, isSharePage } from './page'
 import { blobToDataURL } from './utils/dom'
-import { logger } from './utils/logger'
 import { memorize } from './utils/memorize'
-import { assertValidChatId, assertValidPagination, assertValidRequestUrl } from './utils/validation'
-
-/**
- * Error thrown when a backend API request fails. Carries enough context
- * (status, url, method) for callers and logs to act on without leaking the
- * request body or auth headers.
- */
-export class ApiError extends Error {
-    readonly status: number
-    readonly statusText: string
-    readonly url: string
-    readonly method: string
-
-    constructor(message: string, init: { status: number; statusText: string; url: string; method: string }) {
-        super(message)
-        this.name = 'ApiError'
-        this.status = init.status
-        this.statusText = init.statusText
-        this.url = init.url
-        this.method = init.method
-    }
-}
-
-export function isApiError(error: unknown): error is ApiError {
-    return error instanceof ApiError
-        || (typeof error === 'object' && error !== null && 'name' in error
-            && (error as { name: unknown }).name === 'ApiError')
-}
-
-/** Redact ids/tokens from a url so it is safe to put in logs. */
-function redactUrl(url: string): string {
-    try {
-        const parsed = new URL(url)
-        // Redact any path segment that looks like an identifier (contains a
-        // digit or is long) so conversation/file ids never reach the logs.
-        const redactedPath = parsed.pathname
-            .split('/')
-            .map(segment => (segment.length >= 8 || /\d/.test(segment)) ? '<id>' : segment)
-            .join('/')
-        return `${parsed.origin}${redactedPath}`
-    }
-    catch {
-        return '<unparseable-url>'
-    }
-}
 
 interface ApiSession {
     accessToken: string
@@ -423,10 +376,7 @@ async function fetchImageFromPointer(uri: string) {
     const pointer = uri.replace('file-service://', '')
     const imageDetails = await fetchApi<ApiFileDownload>(fileDownloadApi(pointer))
     if (imageDetails.status === 'error') {
-        logger.error('Failed to fetch image asset', {
-            errorCode: imageDetails.error_code,
-            errorMessage: imageDetails.error_message,
-        })
+        console.error('Failed to fetch image asset', imageDetails.error_code, imageDetails.error_message)
         return null
     }
 
@@ -473,7 +423,7 @@ async function replaceImageAssets(conversation: ApiConversation): Promise<void> 
                 if (newAssetPointer) asset.asset_pointer = newAssetPointer
             }
             catch (error) {
-                logger.error('Failed to fetch image asset', { error })
+                console.error('Failed to fetch image asset', error)
             }
         }),
         ...executionOutputs.map(async (msg) => {
@@ -482,23 +432,16 @@ async function replaceImageAssets(conversation: ApiConversation): Promise<void> 
                 if (newImageUrl) msg.image_url = newImageUrl
             }
             catch (error) {
-                logger.error('Failed to fetch image asset', { error })
+                console.error('Failed to fetch image asset', error)
             }
         }),
     ])
 }
 
 export async function fetchConversation(chatId: string, shouldReplaceAssets: boolean): Promise<ApiConversationWithId> {
-    await requireExporterApiAuth()
-
-    const validChatId = assertValidChatId(chatId)
-
-    if (validChatId.startsWith('__share__')) {
-        const id = validChatId.replace('__share__', '')
-        const shareConversation = getConversationFromSharePage() as ApiConversation | null
-        if (!shareConversation) {
-            throw new Error('Failed to read shared conversation from the page.')
-        }
+    if (chatId.startsWith('__share__')) {
+        const id = chatId.replace('__share__', '')
+        const shareConversation = getConversationFromSharePage() as ApiConversation
         await replaceImageAssets(shareConversation)
 
         return {
@@ -507,7 +450,7 @@ export async function fetchConversation(chatId: string, shouldReplaceAssets: boo
         }
     }
 
-    const url = conversationApi(validChatId)
+    const url = conversationApi(chatId)
     const conversation = await fetchApi<ApiConversation>(url)
 
     if (shouldReplaceAssets) {
@@ -515,14 +458,12 @@ export async function fetchConversation(chatId: string, shouldReplaceAssets: boo
     }
 
     return {
-        id: validChatId,
+        id: chatId,
         ...conversation,
     }
 }
 
 export async function fetchProjects(): Promise<ApiProjectInfo[]> {
-    await requireExporterApiAuth()
-
     const url = projectsApi()
     const { items } = await fetchApi<{ items: ApiGizmo[] }>(url)
     return items.map(gizmo => (gizmo.gizmo.gizmo))
@@ -532,14 +473,11 @@ async function fetchConversations(offset = 0, limit = 20, project: string | null
     if (project) {
         return fetchProjectConversations(project, offset, limit)
     }
-    assertValidPagination(offset, limit)
     const url = conversationsApi(offset, limit)
     return fetchApi(url)
 }
 
 async function fetchProjectConversations(project: string, offset = 0, limit = 20): Promise<ApiConversations> {
-    assertValidChatId(project, 'project')
-    assertValidPagination(offset, limit)
     const url = projectConversationsApi(project, offset, limit)
     const { items } = await fetchApi< { items: ApiConversationItem[]; cursor: number | null }>(url)
     return {
@@ -552,12 +490,6 @@ async function fetchProjectConversations(project: string, offset = 0, limit = 20
 }
 
 export async function fetchAllConversations(project: string | null = null, maxConversations = 1000): Promise<ApiConversationItem[]> {
-    await requireExporterApiAuth()
-
-    if (!Number.isInteger(maxConversations) || maxConversations <= 0) {
-        throw new Error(`maxConversations must be a positive integer, received ${maxConversations}.`)
-    }
-
     const conversations: ApiConversationItem[] = []
     const limit = project === null ? 100 : 50 // gizmos api uses a smaller limit
     let offset = 0
@@ -568,7 +500,7 @@ export async function fetchAllConversations(project: string | null = null, maxCo
                 : await fetchProjectConversations(project, offset, limit)
             if (!result.items) {
                 // Handle potential API errors or empty responses
-                logger.warn('fetchAllConversations received no items', { offset, project })
+                console.warn('fetchAllConversations received no items at offset:', offset)
                 break
             }
             conversations.push(...result.items)
@@ -579,7 +511,7 @@ export async function fetchAllConversations(project: string | null = null, maxCo
             offset += limit
         }
         catch (error) {
-            logger.error('Error fetching conversations batch', { offset, project, error })
+            console.error('Error fetching conversations batch:', error)
             break
         }
     }
@@ -588,9 +520,7 @@ export async function fetchAllConversations(project: string | null = null, maxCo
 }
 
 export async function archiveConversation(chatId: string): Promise<boolean> {
-    await requireExporterApiAuth()
-
-    const url = conversationApi(assertValidChatId(chatId))
+    const url = conversationApi(chatId)
     const { success } = await fetchApi<{ success: boolean }>(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -600,9 +530,7 @@ export async function archiveConversation(chatId: string): Promise<boolean> {
 }
 
 export async function deleteConversation(chatId: string): Promise<boolean> {
-    await requireExporterApiAuth()
-
-    const url = conversationApi(assertValidChatId(chatId))
+    const url = conversationApi(chatId)
     const { success } = await fetchApi<{ success: boolean }>(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -612,98 +540,30 @@ export async function deleteConversation(chatId: string): Promise<boolean> {
 }
 
 async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
-    await requireExporterApiAuth()
-
-    assertValidRequestUrl(url, 'backend API url')
-    const method = options?.method ?? 'GET'
-    const safeUrl = redactUrl(url)
-
     const accessToken = await getAccessToken()
     const accountId = await getTeamAccountId()
 
-    logger.debug('API request', { method, url: safeUrl })
-
-    let response: Response
-    try {
-        response = await fetch(url, {
-            ...options,
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'X-Authorization': `Bearer ${accessToken}`,
-                ...(accountId ? { 'Chatgpt-Account-Id': accountId } : {}),
-                ...options?.headers,
-            },
-        })
-    }
-    catch (error) {
-        // Network-level failure (offline, CORS, DNS). Surface as a typed error.
-        logger.error('API request failed (network)', { method, url: safeUrl, error })
-        throw new ApiError('Network request failed.', { status: 0, statusText: 'Network Error', url: safeUrl, method })
-    }
-
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'X-Authorization': `Bearer ${accessToken}`,
+            ...(accountId ? { 'Chatgpt-Account-Id': accountId } : {}),
+            ...options?.headers,
+        },
+    })
     if (!response.ok) {
-        logger.error('API request returned an error status', {
-            method,
-            url: safeUrl,
-            status: response.status,
-            statusText: response.statusText,
-        })
-        throw new ApiError(
-            `Request failed with status ${response.status} ${response.statusText}`.trim(),
-            { status: response.status, statusText: response.statusText, url: safeUrl, method },
-        )
+        throw new Error(response.statusText)
     }
-
-    try {
-        return await response.json() as T
-    }
-    catch (error) {
-        logger.error('API response was not valid JSON', { method, url: safeUrl, error })
-        throw new ApiError('Response was not valid JSON.', {
-            status: response.status,
-            statusText: response.statusText,
-            url: safeUrl,
-            method,
-        })
-    }
+    return response.json()
 }
 
 async function _fetchSession(): Promise<ApiSession> {
-    assertValidRequestUrl(sessionApi, 'session url')
-
-    let response: Response
-    try {
-        response = await fetch(sessionApi)
-    }
-    catch (error) {
-        logger.error('Session request failed (network)', { error })
-        throw new ApiError('Network request failed.', {
-            status: 0,
-            statusText: 'Network Error',
-            url: redactUrl(sessionApi),
-            method: 'GET',
-        })
-    }
-
+    const response = await fetch(sessionApi)
     if (!response.ok) {
-        throw new ApiError(
-            `Session request failed with status ${response.status} ${response.statusText}`.trim(),
-            { status: response.status, statusText: response.statusText, url: redactUrl(sessionApi), method: 'GET' },
-        )
+        throw new Error(response.statusText)
     }
-
-    try {
-        return await response.json() as ApiSession
-    }
-    catch (error) {
-        logger.error('Session response was not valid JSON', { error })
-        throw new ApiError('Session response was not valid JSON.', {
-            status: response.status,
-            statusText: response.statusText,
-            url: redactUrl(sessionApi),
-            method: 'GET',
-        })
-    }
+    return response.json()
 }
 
 const fetchSession = memorize(_fetchSession)
@@ -717,47 +577,18 @@ async function getAccessToken(): Promise<string> {
 }
 
 async function _fetchAccountsCheck(): Promise<ApiAccountsCheck> {
-    assertValidRequestUrl(accountsCheckApi, 'accounts check url')
     const accessToken = await getAccessToken()
 
-    let response: Response
-    try {
-        response = await fetch(accountsCheckApi, {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'X-Authorization': `Bearer ${accessToken}`,
-            },
-        })
-    }
-    catch (error) {
-        logger.error('Accounts check request failed (network)', { error })
-        throw new ApiError('Network request failed.', {
-            status: 0,
-            statusText: 'Network Error',
-            url: redactUrl(accountsCheckApi),
-            method: 'GET',
-        })
-    }
-
+    const response = await fetch(accountsCheckApi, {
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'X-Authorization': `Bearer ${accessToken}`,
+        },
+    })
     if (!response.ok) {
-        throw new ApiError(
-            `Accounts check failed with status ${response.status} ${response.statusText}`.trim(),
-            { status: response.status, statusText: response.statusText, url: redactUrl(accountsCheckApi), method: 'GET' },
-        )
+        throw new Error(response.statusText)
     }
-
-    try {
-        return await response.json() as ApiAccountsCheck
-    }
-    catch (error) {
-        logger.error('Accounts check response was not valid JSON', { error })
-        throw new ApiError('Accounts check response was not valid JSON.', {
-            status: response.status,
-            statusText: response.statusText,
-            url: redactUrl(accountsCheckApi),
-            method: 'GET',
-        })
-    }
+    return response.json()
 }
 
 const fetchAccountsCheck = memorize(_fetchAccountsCheck)
