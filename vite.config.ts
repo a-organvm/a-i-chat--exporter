@@ -63,6 +63,11 @@ export default defineConfig({
                     'https://new.oaifree.com/gpts/*',
                     'https://new.oaifree.com/share/*',
                     'https://new.oaifree.com/share/*/continue',
+
+                    'https://gemini.google.com/',
+                    'https://gemini.google.com/app',
+                    'https://gemini.google.com/app/*',
+                    'https://gemini.google.com/share/*',
                 ],
                 'icon': 'https://chat.openai.com/favicon.ico',
                 'run-at': 'document-end',

@@ -155,7 +155,7 @@ function reformatContent(input: string) {
 function transformAuthor(author: ConversationNodeMessage['author']): string {
     switch (author.role) {
         case 'assistant':
-            return 'ChatGPT'
+            return author.name || 'ChatGPT'
         case 'user':
             return 'You'
         case 'tool':

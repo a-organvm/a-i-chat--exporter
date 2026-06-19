@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas'
 import i18n from '../i18n'
 import { checkIfConversationStarted, getChatIdFromUrl } from '../page'
+import { getActiveProvider } from '../providers'
 import { downloadUrl, getFileNameWithFormat } from '../utils/download'
 import { Effect } from '../utils/effect'
 import { sleep } from '../utils/utils'
@@ -18,7 +19,9 @@ export async function exportToPng(fileNameFormat: string) {
 
     const effect = new Effect()
 
-    const thread = document.querySelector('#thread div:has(> [data-testid="conversation-turn-1"]')
+    const provider = getActiveProvider()
+    const thread = provider?.getScreenshotTarget?.()
+        ?? document.querySelector('#thread div:has(> [data-testid="conversation-turn-1"]')
     if (!thread || thread.children.length === 0 || thread.scrollHeight < 50) {
         alert(i18n.t('Failed to export to PNG. Failed to find the element node.'))
         return false

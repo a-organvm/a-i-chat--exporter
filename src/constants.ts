@@ -2,11 +2,12 @@ const API_MAPPING: Record<string, string> = {
     'https://chat.openai.com': 'https://chat.openai.com/backend-api',
     'https://chatgpt.com': 'https://chatgpt.com/backend-api',
     'https://new.oaifree.com': 'https://new.oaifree.com/backend-api',
+    'https://gemini.google.com': 'https://gemini.google.com',
 }
 
 // export const baseUrl = 'https://chat.openai.com'
 export const baseUrl = new URL(location.href).origin
-export const apiUrl = API_MAPPING[baseUrl]
+export const apiUrl = API_MAPPING[baseUrl] ?? baseUrl
 
 export const KEY_LANGUAGE = 'exporter:language'
 export const KEY_FILENAME_FORMAT = 'exporter:filename_format'

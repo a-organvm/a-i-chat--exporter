@@ -1,8 +1,9 @@
 import JSZip from 'jszip'
 import { fetchConversation, getCurrentChatId, processConversation } from '../api'
-import { KEY_TIMESTAMP_24H, KEY_TIMESTAMP_ENABLED, KEY_TIMESTAMP_MARKDOWN, baseUrl } from '../constants'
+import { KEY_TIMESTAMP_24H, KEY_TIMESTAMP_ENABLED, KEY_TIMESTAMP_MARKDOWN } from '../constants'
 import i18n from '../i18n'
 import { checkIfConversationStarted } from '../page'
+import { getConversationSource } from '../providers'
 import { downloadFile, getFileNameWithFormat } from '../utils/download'
 import { fromMarkdown, toMarkdown } from '../utils/markdown'
 import { ScriptStorage } from '../utils/storage'
@@ -67,7 +68,7 @@ const LatexRegex = /(\s\$\$.+\$\$\s|\s\$.+\$\s|\\\[.+\\\]|\\\(.+\\\))|(^\$$[\S\s
 
 function conversationToMarkdown(conversation: ConversationResult, metaList?: ExportMeta[]) {
     const { id, title, model, modelSlug, createTime, updateTime, conversationNodes } = conversation
-    const source = `${baseUrl}/c/${id}`
+    const source = getConversationSource(id)
 
     const _metaList = metaList
         ?.filter(x => !!x.name)
@@ -178,7 +179,7 @@ function conversationToMarkdown(conversation: ConversationResult, metaList?: Exp
 function transformAuthor(author: ConversationNodeMessage['author']): string {
     switch (author.role) {
         case 'assistant':
-            return 'ChatGPT'
+            return author.name || 'ChatGPT'
         case 'user':
             return 'You'
         case 'tool':

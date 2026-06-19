@@ -1,10 +1,10 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { useTranslation } from 'react-i18next'
 import sanitize from 'sanitize-filename'
-import { baseUrl } from '../constants'
 import { useTitle } from '../hooks/useTitle'
 import { LOCALES } from '../i18n'
 import { getChatIdFromUrl } from '../page'
+import { getConversationSource } from '../providers'
 import { getFileNameWithFormat } from '../utils/download'
 import { timestamp as _timestamp, dateStr, unixTimestampToISOString } from '../utils/utils'
 import { IconCross, IconTrash } from './Icons'
@@ -49,7 +49,7 @@ export const SettingDialog: FC<SettingDialogProps> = ({
     const updateTime = now
     const preview = getFileNameWithFormat(format, '{ext}', { title, chatId, createTime, updateTime })
 
-    const source = `${baseUrl}/${chatId}`
+    const source = getConversationSource(chatId)
 
     return (
         <Dialog.Root

@@ -2,6 +2,7 @@ import { render } from 'preact'
 import sentinel from 'sentinel-js'
 import { fetchConversation, processConversation } from './api'
 import { getChatIdFromUrl, isSharePage } from './page'
+import { getActiveProvider } from './providers'
 import { Menu } from './ui/Menu'
 import { onloadSafe } from './utils/utils'
 
@@ -15,6 +16,12 @@ function main() {
         const styleEl = document.createElement('style')
         styleEl.id = 'sentinel-css'
         document.head.append(styleEl)
+
+        const provider = getActiveProvider()
+        if (provider?.mountMenu) {
+            provider.mountMenu(getMenuContainer)
+            return
+        }
 
         const injectionMap = new Map<HTMLElement, HTMLElement>()
 

@@ -1,5 +1,6 @@
 import { unsafeWindow } from 'vite-plugin-monkey/dist/client'
 import { KEY_OAI_HISTORY_DISABLED } from './constants'
+import { getActiveProvider } from './providers'
 import { getBase64FromImageUrl, getBase64FromImg } from './utils/dom'
 
 declare global {
@@ -77,6 +78,7 @@ declare global {
 }
 
 export function getHistoryDisabled(): boolean {
+    if (getActiveProvider()) return false
     return localStorage.getItem(KEY_OAI_HISTORY_DISABLED) === '"true"'
 }
 
@@ -91,6 +93,9 @@ function getUserProfile() {
 }
 
 export function getChatIdFromUrl() {
+    const provider = getActiveProvider()
+    if (provider?.getChatIdFromUrl) return provider.getChatIdFromUrl()
+
     // /share/1e5sf-asdf-1234
     // /c/1e5sf-asdf-1234
     // /g/1e5sf-asdf-1234/c/1e5sf-asdf-1234
@@ -100,6 +105,8 @@ export function getChatIdFromUrl() {
 }
 
 export function isSharePage() {
+    if (getActiveProvider()) return false
+
     return location.pathname.startsWith('/share')
         && !location.pathname.endsWith('/continue')
 }
@@ -118,6 +125,9 @@ export function getConversationFromSharePage() {
 
 const defaultAvatar = 'data:image/svg+xml,%3Csvg%20stroke%3D%22currentColor%22%20fill%3D%22none%22%20stroke-width%3D%221.5%22%20viewBox%3D%22-6%20-6%2036%2036%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20style%3D%22color%3A%20white%3B%20background%3A%20%23ab68ff%3B%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M20%2021v-2a4%204%200%200%200-4-4H8a4%204%200%200%200-4%204v2%22%3E%3C%2Fpath%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%227%22%20r%3D%224%22%3E%3C%2Fcircle%3E%3C%2Fsvg%3E'
 export async function getUserAvatar(): Promise<string> {
+    const provider = getActiveProvider()
+    if (provider?.getUserAvatar) return provider.getUserAvatar()
+
     try {
         const { picture } = getUserProfile()
         if (picture) return await getBase64FromImageUrl(picture)
@@ -140,5 +150,8 @@ export async function getUserAvatar(): Promise<string> {
 }
 
 export function checkIfConversationStarted() {
+    const provider = getActiveProvider()
+    if (provider?.checkIfConversationStarted) return provider.checkIfConversationStarted()
+
     return !!document.querySelector('[data-testid^="conversation-turn-"]')
 }

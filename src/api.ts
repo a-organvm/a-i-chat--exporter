@@ -1,6 +1,7 @@
 import urlcat from 'urlcat'
 import { apiUrl, baseUrl } from './constants'
 import { getChatIdFromUrl, getConversationFromSharePage, getPageAccessToken, isSharePage } from './page'
+import { getActiveProvider } from './providers'
 import { blobToDataURL } from './utils/dom'
 import { memorize } from './utils/memorize'
 
@@ -87,7 +88,7 @@ interface MessageMeta {
         type: 'stop' | 'interrupted' & (string & {})
     }
     is_complete?: boolean
-    model_slug?: ModelSlug & (string & {})
+    model_slug?: ModelSlug | (string & {})
     parent_id?: string
     timestamp_?: 'absolute' & (string & {})
     citations?: Citation[]
@@ -166,7 +167,7 @@ interface MultiModalAudioTranscription {
 export interface ConversationNodeMessage {
     author: {
         role: AuthorRole
-        name?: 'browser' | 'python' & (string & {})
+        name?: 'browser' | 'python' | (string & {})
         metadata: unknown
     }
     content: {
@@ -357,6 +358,9 @@ const projectConversationsApi = (gizmo: string, offset: number, limit: number) =
 const accountsCheckApi = urlcat(apiUrl, '/accounts/check/v4-2023-04-27')
 
 export async function getCurrentChatId(): Promise<string> {
+    const provider = getActiveProvider()
+    if (provider?.getCurrentChatId) return provider.getCurrentChatId()
+
     if (isSharePage()) {
         return `__share__${getChatIdFromUrl()}`
     }
@@ -439,6 +443,9 @@ async function replaceImageAssets(conversation: ApiConversation): Promise<void> 
 }
 
 export async function fetchConversation(chatId: string, shouldReplaceAssets: boolean): Promise<ApiConversationWithId> {
+    const provider = getActiveProvider()
+    if (provider?.fetchConversation) return provider.fetchConversation(chatId, shouldReplaceAssets)
+
     if (chatId.startsWith('__share__')) {
         const id = chatId.replace('__share__', '')
         const shareConversation = getConversationFromSharePage() as ApiConversation
@@ -464,6 +471,9 @@ export async function fetchConversation(chatId: string, shouldReplaceAssets: boo
 }
 
 export async function fetchProjects(): Promise<ApiProjectInfo[]> {
+    const provider = getActiveProvider()
+    if (provider?.fetchProjects) return provider.fetchProjects()
+
     const url = projectsApi()
     const { items } = await fetchApi<{ items: ApiGizmo[] }>(url)
     return items.map(gizmo => (gizmo.gizmo.gizmo))
@@ -490,6 +500,9 @@ async function fetchProjectConversations(project: string, offset = 0, limit = 20
 }
 
 export async function fetchAllConversations(project: string | null = null, maxConversations = 1000): Promise<ApiConversationItem[]> {
+    const provider = getActiveProvider()
+    if (provider?.fetchAllConversations) return provider.fetchAllConversations(project, maxConversations)
+
     const conversations: ApiConversationItem[] = []
     const limit = project === null ? 100 : 50 // gizmos api uses a smaller limit
     let offset = 0
@@ -520,6 +533,9 @@ export async function fetchAllConversations(project: string | null = null, maxCo
 }
 
 export async function archiveConversation(chatId: string): Promise<boolean> {
+    const provider = getActiveProvider()
+    if (provider?.archiveConversation) return provider.archiveConversation(chatId)
+
     const url = conversationApi(chatId)
     const { success } = await fetchApi<{ success: boolean }>(url, {
         method: 'PATCH',
@@ -530,6 +546,9 @@ export async function archiveConversation(chatId: string): Promise<boolean> {
 }
 
 export async function deleteConversation(chatId: string): Promise<boolean> {
+    const provider = getActiveProvider()
+    if (provider?.deleteConversation) return provider.deleteConversation(chatId)
+
     const url = conversationApi(chatId)
     const { success } = await fetchApi<{ success: boolean }>(url, {
         method: 'PATCH',
@@ -627,6 +646,7 @@ const ModelMapping: { [key in ModelSlug]: string } & { [key: string]: string } =
     'gpt-4': 'GPT-4',
     'gpt-4-browsing': 'GPT-4 (Browser)',
     'gpt-4o': 'GPT-4o',
+    'gemini': 'Gemini',
 
     // fuzzy matching
     'text-davinci-002': 'GPT-3.5',

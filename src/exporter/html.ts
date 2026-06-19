@@ -1,8 +1,9 @@
 import JSZip from 'jszip'
 import { fetchConversation, getCurrentChatId, processConversation } from '../api'
-import { KEY_TIMESTAMP_24H, KEY_TIMESTAMP_ENABLED, KEY_TIMESTAMP_HTML, baseUrl } from '../constants'
+import { KEY_TIMESTAMP_24H, KEY_TIMESTAMP_ENABLED, KEY_TIMESTAMP_HTML } from '../constants'
 import i18n from '../i18n'
 import { checkIfConversationStarted, getUserAvatar } from '../page'
+import { getConversationSource } from '../providers'
 import templateHtml from '../template.html?raw'
 import { downloadFile, getFileNameWithFormat } from '../utils/download'
 import { fromMarkdown, toHtml } from '../utils/markdown'
@@ -174,7 +175,7 @@ function conversationToHtml(conversation: ConversationResult, avatar: string, me
 
     const date = dateStr()
     const time = new Date().toISOString()
-    const source = `${baseUrl}/c/${id}`
+    const source = getConversationSource(id)
     const lang = document.documentElement.lang ?? 'en'
     const theme = getColorScheme()
 
@@ -219,7 +220,7 @@ function conversationToHtml(conversation: ConversationResult, avatar: string, me
 function transformAuthor(author: ConversationNodeMessage['author']): string {
     switch (author.role) {
         case 'assistant':
-            return 'ChatGPT'
+            return author.name || 'ChatGPT'
         case 'user':
             return 'You'
         case 'tool':

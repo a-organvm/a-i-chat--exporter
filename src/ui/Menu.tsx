@@ -9,6 +9,7 @@ import { exportToMarkdown } from '../exporter/markdown'
 import { exportToText } from '../exporter/text'
 import { useWindowResize } from '../hooks/useWindowResize'
 import { getHistoryDisabled } from '../page'
+import { getProviderFeature } from '../providers'
 import { Divider } from './Divider'
 import { ExportDialog } from './ExportDialog'
 import { FileCode, IconArrowRightFromBracket, IconCamera, IconCopy, IconJSON, IconMarkdown, IconSetting, IconZip } from './Icons'
@@ -62,6 +63,7 @@ function MenuInner({ container }: { container: HTMLDivElement }) {
     const width = useWindowResize(() => window.innerWidth)
     const isMobile = width < 768
     const Portal = isMobile ? 'div' : HoverCard.Portal
+    const supportsBulkExport = getProviderFeature('bulkExport')
 
     if (disabled) {
         return (
@@ -195,18 +197,20 @@ function MenuInner({ container }: { container: HTMLDivElement }) {
                                 </Dialog.Content>
                             </Dialog.Portal>
                         </Dialog.Root>
-                        <ExportDialog
-                            format={format}
-                            open={exportOpen}
-                            onOpenChange={setExportOpen}
-                        >
-                            <div className="row-full">
-                                <MenuItem
-                                    text={t('Export All')}
-                                    icon={IconZip}
-                                />
-                            </div>
-                        </ExportDialog>
+                        {supportsBulkExport && (
+                            <ExportDialog
+                                format={format}
+                                open={exportOpen}
+                                onOpenChange={setExportOpen}
+                            >
+                                <div className="row-full">
+                                    <MenuItem
+                                        text={t('Export All')}
+                                        icon={IconZip}
+                                    />
+                                </div>
+                            </ExportDialog>
+                        )}
 
                         {!isMobile && (
                             <HoverCard.Arrow
