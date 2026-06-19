@@ -48,6 +48,19 @@ pnpm run preview:site       # build + serve at http://localhost:8080
 > Every target below is configured to send `Content-Type: text/javascript` for
 > `chatgpt.user.js` (nginx config, `vercel.json`, and `_headers` respectively).
 
+### Pro checkout configuration
+
+Set `VITE_LEMON_SQUEEZY_CHECKOUT_URL` at build time to enable the in-app **Buy
+Pro** button. The value should be the hosted Lemon Squeezy checkout URL for the
+one-time Pro product:
+
+```bash
+VITE_LEMON_SQUEEZY_CHECKOUT_URL="https://your-store.lemonsqueezy.com/buy/..." pnpm run build
+```
+
+When this value is empty, the Pro gate still verifies pasted license keys, but
+the in-app checkout button stays disabled.
+
 ---
 
 ## Option 1 — Docker (self-host)

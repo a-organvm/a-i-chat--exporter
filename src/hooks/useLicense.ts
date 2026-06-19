@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { KEY_PRO_LICENSE_KEY } from '../constants'
-import { FREE_STATUS, hasFeature as hasFeatureFor, isProUnlocked, verifyLicense } from '../utils/license'
+import { FREE_STATUS, captureLicenseFromUrl, hasFeature as hasFeatureFor, isProUnlocked, verifyLicense } from '../utils/license'
 import { useGMStorage } from './useGMStorage'
 import type { LicenseStatus } from '../utils/license'
 
@@ -13,6 +13,12 @@ export function useLicense() {
     const [licenseKey, setLicenseKey] = useGMStorage(KEY_PRO_LICENSE_KEY, '')
     const [status, setStatus] = useState<LicenseStatus>(FREE_STATUS)
     const [verifying, setVerifying] = useState(false)
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+
+        captureLicenseFromUrl(setLicenseKey)
+    }, [setLicenseKey])
 
     useEffect(() => {
         let cancelled = false
