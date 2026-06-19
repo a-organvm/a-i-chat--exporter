@@ -92,8 +92,8 @@ devDependencies:
     specifier: ^0.16.7
     version: 0.16.7
   '@types/mdast':
-    specifier: ^4.0.4
-    version: 4.0.4
+    specifier: ^3.0.15
+    version: 3.0.15
   '@types/node':
     specifier: ^20.11.20
     version: 20.11.20
