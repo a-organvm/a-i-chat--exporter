@@ -8,6 +8,7 @@ import { useTitle } from '../hooks/useTitle'
 import { LOCALES } from '../i18n'
 import { getChatIdFromUrl } from '../page'
 import { getFileNameWithFormat } from '../utils/download'
+import { LEMON_SQUEEZY_CHECKOUT_URL, openProCheckout } from '../utils/license'
 import { timestamp as _timestamp, dateStr, unixTimestampToISOString } from '../utils/utils'
 import { IconCross, IconTrash } from './Icons'
 import { useSettingContext } from './SettingContext'
@@ -40,7 +41,7 @@ export const SettingDialog: FC<SettingDialogProps> = ({
         exportMetaList, setExportMetaList,
         exportAllLimit, setExportAllLimit,
         licenseKey, setLicenseKey,
-        hasProLicense,
+        hasProLicense, licenseVerifying,
         /* eslint-enable pionxzh/consistent-list-newline */
     } = useSettingContext()
     const { t, i18n } = useTranslation()
@@ -212,10 +213,26 @@ export const SettingDialog: FC<SettingDialogProps> = ({
                                         onChange={e => setLicenseKey(e.currentTarget.value)}
                                     />
                                     <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                                        {hasProLicense
-                                            ? t('Pro License Active')
-                                            : t('Pro License Required Description')}
+                                        {licenseVerifying
+                                            ? t('License Verifying')
+                                            : hasProLicense
+                                                ? t('Pro License Active')
+                                                : licenseKey.trim()
+                                                    ? t('License Invalid')
+                                                    : t('Pro License Required Description')}
                                     </p>
+                                    {!hasProLicense && (
+                                        <button
+                                            type="button"
+                                            className="Button mt-3"
+                                            onClick={() => {
+                                                if (!openProCheckout()) alert(t('Checkout Not Configured'))
+                                            }}
+                                            disabled={!LEMON_SQUEEZY_CHECKOUT_URL}
+                                        >
+                                            {t('Buy Pro')}
+                                        </button>
+                                    )}
                                 </dd>
                             </div>
                         </div>

@@ -5,18 +5,19 @@ import {
     KEY_FILENAME_FORMAT,
     KEY_META_ENABLED,
     KEY_META_LIST,
-    KEY_PRO_LICENSE_KEY,
     KEY_TIMESTAMP_24H,
     KEY_TIMESTAMP_ENABLED,
     KEY_TIMESTAMP_HTML,
     KEY_TIMESTAMP_MARKDOWN,
 } from '../constants'
 import { useGMStorage } from '../hooks/useGMStorage'
+import { useLicense } from '../hooks/useLicense'
+import { FREE_STATUS, hasFeature, isProUnlocked } from '../utils/license'
+import type { LicenseStatus } from '../utils/license'
 import type { FC } from 'preact/compat'
 
 const defaultFormat = 'ChatGPT-{title}'
 const defaultExportAllLimit = 1000
-const defaultLicenseKey = ''
 
 export const PRO_FEATURES = {
     bulkExport: 'bulk-export',
@@ -24,7 +25,7 @@ export const PRO_FEATURES = {
 } as const
 
 export type ProFeature = typeof PRO_FEATURES[keyof typeof PRO_FEATURES]
-export type ProGateReason = 'missing-license-key'
+export type ProGateReason = 'missing-license-key' | 'unverified-license-key'
 
 export interface ProFeatureAccess {
     feature: ProFeature
@@ -50,15 +51,24 @@ export function hasLicenseKey(licenseKey: string) {
     return normalizeLicenseKey(licenseKey).length > 0
 }
 
-export function checkLicenseGate(feature: ProFeature, licenseKey: string): ProFeatureAccess {
-    // Replace this local scaffold with Lemon Squeezy validation when licensing is wired.
-    const allowed = hasLicenseKey(licenseKey)
+/**
+ * Gate a Pro feature against a *verified* license status. A key must pass
+ * signed-key / Lemon Squeezy verification (see `utils/license`) and actually
+ * grant the requested feature — a merely-present key does not unlock anything.
+ */
+export function checkLicenseGate(
+    feature: ProFeature,
+    status: LicenseStatus,
+    licenseKey = '',
+): ProFeatureAccess {
+    const allowed = hasFeature(status, feature)
 
-    return {
-        feature,
-        allowed,
-        reason: allowed ? null : 'missing-license-key',
+    let reason: ProGateReason | null = null
+    if (!allowed) {
+        reason = hasLicenseKey(licenseKey) ? 'unverified-license-key' : 'missing-license-key'
     }
+
+    return { feature, allowed, reason }
 }
 
 interface SettingContextValue {
@@ -83,6 +93,8 @@ interface SettingContextValue {
 
     licenseKey: string
     setLicenseKey: (value: string) => void
+    licenseStatus: LicenseStatus
+    licenseVerifying: boolean
     hasProLicense: boolean
     checkProFeature: (feature: ProFeature) => ProFeatureAccess
 
@@ -109,10 +121,12 @@ const SettingContext = createContext<SettingContextValue>({
     exportAllLimit: defaultExportAllLimit,
     setExportAllLimit: (_: number) => {},
 
-    licenseKey: defaultLicenseKey,
+    licenseKey: '',
     setLicenseKey: (_: string) => {},
+    licenseStatus: FREE_STATUS,
+    licenseVerifying: false,
     hasProLicense: false,
-    checkProFeature: feature => checkLicenseGate(feature, defaultLicenseKey),
+    checkProFeature: feature => checkLicenseGate(feature, FREE_STATUS),
 
     resetDefault: () => {},
 })
@@ -129,12 +143,13 @@ export const SettingProvider: FC = ({ children }) => {
 
     const [exportMetaList, setExportMetaList] = useGMStorage(KEY_META_LIST, defaultExportMetaList)
     const [exportAllLimit, setExportAllLimit] = useGMStorage(KEY_EXPORT_ALL_LIMIT, defaultExportAllLimit)
-    const [licenseKey, setLicenseKey] = useGMStorage(KEY_PRO_LICENSE_KEY, defaultLicenseKey)
 
-    const hasProLicense = useMemo(() => hasLicenseKey(licenseKey), [licenseKey])
+    const { licenseKey, setLicenseKey, status: licenseStatus, verifying: licenseVerifying } = useLicense()
+
+    const hasProLicense = useMemo(() => isProUnlocked(licenseStatus), [licenseStatus])
     const checkProFeature = useCallback(
-        (feature: ProFeature) => checkLicenseGate(feature, licenseKey),
-        [licenseKey],
+        (feature: ProFeature) => checkLicenseGate(feature, licenseStatus, licenseKey),
+        [licenseStatus, licenseKey],
     )
 
     const resetDefault = useCallback(() => {
@@ -176,6 +191,8 @@ export const SettingProvider: FC = ({ children }) => {
 
                 licenseKey,
                 setLicenseKey,
+                licenseStatus,
+                licenseVerifying,
                 hasProLicense,
                 checkProFeature,
 
