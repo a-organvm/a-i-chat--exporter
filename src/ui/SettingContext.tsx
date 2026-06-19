@@ -11,6 +11,9 @@ import {
     KEY_TIMESTAMP_MARKDOWN,
 } from '../constants'
 import { useGMStorage } from '../hooks/useGMStorage'
+import { useLicense } from '../hooks/useLicense'
+import { FREE_STATUS } from '../utils/license'
+import type { LicenseStatus } from '../utils/license'
 import type { FC } from 'preact/compat'
 
 const defaultFormat = 'ChatGPT-{title}'
@@ -45,6 +48,14 @@ const SettingContext = createContext({
     setExportMetaList: (_: ExportMeta[]) => {},
     exportAllLimit: defaultExportAllLimit,
     setExportAllLimit: (_: number) => {},
+
+    licenseKey: '',
+    setLicenseKey: (_: string) => {},
+    licenseStatus: FREE_STATUS as LicenseStatus,
+    licenseVerifying: false,
+    isPro: false,
+    hasFeature: (_: string) => false,
+
     resetDefault: () => {},
 })
 
@@ -60,6 +71,8 @@ export const SettingProvider: FC = ({ children }) => {
 
     const [exportMetaList, setExportMetaList] = useGMStorage(KEY_META_LIST, defaultExportMetaList)
     const [exportAllLimit, setExportAllLimit] = useGMStorage(KEY_EXPORT_ALL_LIMIT, defaultExportAllLimit)
+
+    const { licenseKey, setLicenseKey, status: licenseStatus, verifying: licenseVerifying, isPro, hasFeature } = useLicense()
 
     const resetDefault = useCallback(() => {
         setFormat(defaultFormat)
@@ -97,6 +110,13 @@ export const SettingProvider: FC = ({ children }) => {
 
                 exportAllLimit,
                 setExportAllLimit,
+
+                licenseKey,
+                setLicenseKey,
+                licenseStatus,
+                licenseVerifying,
+                isPro,
+                hasFeature,
 
                 resetDefault,
             }}

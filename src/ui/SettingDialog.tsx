@@ -1,4 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog'
+import { useState } from 'preact/hooks'
 import { useTranslation } from 'react-i18next'
 import sanitize from 'sanitize-filename'
 import { baseUrl } from '../constants'
@@ -36,9 +37,12 @@ export const SettingDialog: FC<SettingDialogProps> = ({
         enableMeta, setEnableMeta,
         exportMetaList, setExportMetaList,
         exportAllLimit, setExportAllLimit,
+        licenseKey, setLicenseKey,
+        licenseStatus, licenseVerifying, isPro,
         /* eslint-enable pionxzh/consistent-list-newline */
     } = useSettingContext()
     const { t, i18n } = useTranslation()
+    const [licenseDraft, setLicenseDraft] = useState(licenseKey)
     const _title = useTitle()
     const date = dateStr()
     const timestamp = _timestamp()
@@ -80,6 +84,45 @@ export const SettingDialog: FC<SettingDialogProps> = ({
                                             <option key={code} value={code}>{name}</option>
                                         ))}
                                     </select>
+                                </dd>
+                            </div>
+                        </div>
+                        <div className="relative flex bg-white dark:bg-white/5 rounded p-4">
+                            <div className="w-full">
+                                <dt className="text-md font-medium text-gray-800 dark:text-white">
+                                    {`${t('License Key')} ${isPro ? '✅' : '🔒'}`}
+                                </dt>
+                                <dd className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+                                    {t('License Key Description')}
+                                    <div className="flex items-center gap-2 mt-3">
+                                        <input
+                                            className="Input flex-grow"
+                                            id="license"
+                                            type="text"
+                                            placeholder={t('Enter License Key')}
+                                            value={licenseDraft}
+                                            onChange={e => setLicenseDraft(e.currentTarget.value)}
+                                        />
+                                        <button
+                                            className="Button green"
+                                            disabled={licenseVerifying || licenseDraft === licenseKey}
+                                            onClick={() => setLicenseKey(licenseDraft.trim())}
+                                        >
+                                            {t('Verify')}
+                                        </button>
+                                    </div>
+                                    <p className="mt-2 text-sm">
+                                        {licenseVerifying
+                                            ? t('License Verifying')
+                                            : isPro
+                                                ? <span className="text-green-600 dark:text-green-400">{t('License Valid')}</span>
+                                                : licenseKey
+                                                    ? <span className="text-red-600 dark:text-red-400">{t('License Invalid')}</span>
+                                                    : <span className="text-gray-500 dark:text-gray-400">{t('License Free Tier')}</span>}
+                                        {!licenseVerifying && !isPro && licenseStatus.reason && (
+                                            <span className="text-gray-400"> ({licenseStatus.reason})</span>
+                                        )}
+                                    </p>
                                 </dd>
                             </div>
                         </div>

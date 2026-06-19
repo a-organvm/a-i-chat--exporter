@@ -42,5 +42,14 @@
   "Select Project": "Select Project",
   "(no project)": "(no project)",
   "Export All Limit": "Export All Limit",
-  "Export All Limit Description": "Set the maximum number of conversations to load in the 'Export All' dialog."
+  "Export All Limit Description": "Set the maximum number of conversations to load in the 'Export All' dialog.",
+  "License Key": "License Key",
+  "License Key Description": "Enter your Pro license key to unlock bulk and multi-provider export.",
+  "Enter License Key": "Enter your license key",
+  "Verify": "Verify",
+  "License Verifying": "Verifying license…",
+  "License Valid": "License verified — Pro features unlocked.",
+  "License Invalid": "Invalid or inactive license. Free tier features only.",
+  "License Free Tier": "No license — free tier. Single-conversation export only.",
+  "Pro Feature Bulk Export": "Bulk and multi-provider export is a Pro feature. Add a valid license key in Settings to unlock it."
 }

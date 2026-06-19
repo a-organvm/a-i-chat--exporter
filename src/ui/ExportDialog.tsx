@@ -5,6 +5,7 @@ import { archiveConversation, deleteConversation, fetchAllConversations, fetchCo
 import { exportAllToHtml } from '../exporter/html'
 import { exportAllToJson, exportAllToOfficialJson } from '../exporter/json'
 import { exportAllToMarkdown } from '../exporter/markdown'
+import { PRO_FEATURE_BULK_EXPORT, PRO_FEATURE_MULTI_PROVIDER } from '../utils/license'
 import { RequestQueue } from '../utils/queue'
 import { CheckBox } from './CheckBox'
 import { IconCross, IconUpload } from './Icons'
@@ -108,8 +109,13 @@ interface DialogContentProps {
 
 const DialogContent: FC<DialogContentProps> = ({ format }) => {
     const { t } = useTranslation()
-    const { enableMeta, exportMetaList, exportAllLimit } = useSettingContext()
+    const { enableMeta, exportMetaList, exportAllLimit, hasFeature } = useSettingContext()
     const metaList = useMemo(() => enableMeta ? exportMetaList : [], [enableMeta, exportMetaList])
+
+    // Pro gate: bulk export and multi-provider (project-scoped) export require a
+    // valid licence. These default to false (free tier) when no licence is set.
+    const canBulkExport = hasFeature(PRO_FEATURE_BULK_EXPORT)
+    const canMultiProvider = hasFeature(PRO_FEATURE_MULTI_PROVIDER)
 
     const exportAllOptions = useMemo(() => [
         { label: 'Markdown', callback: exportAllToMarkdown },
@@ -219,6 +225,7 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
 
     const exportAllFromApi = useCallback(() => {
         if (disabled) return
+        if (!canBulkExport) return // fail closed: Pro feature
 
         requestQueue.clear()
 
@@ -230,16 +237,18 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
         })
 
         requestQueue.start()
-    }, [disabled, selected, requestQueue, exportType])
+    }, [disabled, canBulkExport, selected, requestQueue, exportType])
 
     const exportAllFromLocal = useCallback(() => {
         if (disabled) return
+        if (!canBulkExport) return // fail closed: Pro feature
 
         const results = localConversations.filter(c => selected.some(s => s.id === c.id))
         const callback = exportAllOptions.find(o => o.label === exportType)?.callback
         if (callback) callback(format, results, metaList)
     }, [
         disabled,
+        canBulkExport,
         selected,
         localConversations,
         exportAllOptions,
@@ -296,14 +305,16 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
 
     useEffect(() => {
         setLoading(true)
-        fetchAllConversations(selectedProject?.id, exportAllLimit)
+        // fail closed: ignore any project scope without the multi-provider feature
+        const projectId = canMultiProvider ? selectedProject?.id : undefined
+        fetchAllConversations(projectId, exportAllLimit)
             .then(setApiConversations)
             .catch((err) => {
                 console.error('Error fetching conversations:', err)
                 setError(err.message || 'Failed to load conversations')
             })
             .finally(() => setLoading(false))
-    }, [selectedProject, exportAllLimit])
+    }, [canMultiProvider, selectedProject, exportAllLimit])
 
     return (
         <>
@@ -328,7 +339,12 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
                     {t('Export from API')}
                 </div>
             )}
-            <ProjectSelect projects={projects} selected={selectedProject} setSelected={setSelectedProject} disabled={processing || loading} />
+            {!canBulkExport && (
+                <div className="rounded p-3 mb-3 text-sm bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
+                    🔒 {t('Pro Feature Bulk Export')}
+                </div>
+            )}
+            <ProjectSelect projects={projects} selected={canMultiProvider ? selectedProject : null} setSelected={setSelectedProject} disabled={processing || loading || !canMultiProvider} />
             <ConversationSelect
                 conversations={conversations}
                 selected={selected}
@@ -350,7 +366,7 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
                 <button className="Button red ml-4" disabled={disabled || exportSource === 'Local'} onClick={deleteAll}>
                     {t('Delete')}
                 </button>
-                <button className="Button green ml-4" disabled={disabled} onClick={exportAll}>
+                <button className="Button green ml-4" disabled={disabled || !canBulkExport} onClick={exportAll}>
                     {t('Export')}
                 </button>
             </div>

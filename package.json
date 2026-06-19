@@ -24,6 +24,7 @@
     "dev": "vite",
     "build": "vite build",
     "test": "tsc --noEmit",
+    "test:unit": "vitest run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky"

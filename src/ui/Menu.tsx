@@ -34,6 +34,7 @@ function MenuInner({ container }: { container: HTMLDivElement }) {
         timeStamp24H,
         enableMeta,
         exportMetaList,
+        isPro,
     } = useSettingContext()
 
     useEffect(() => {
@@ -202,7 +203,7 @@ function MenuInner({ container }: { container: HTMLDivElement }) {
                         >
                             <div className="row-full">
                                 <MenuItem
-                                    text={t('Export All')}
+                                    text={isPro ? t('Export All') : `${t('Export All')} 🔒`}
                                     icon={IconZip}
                                 />
                             </div>
