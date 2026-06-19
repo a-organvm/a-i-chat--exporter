@@ -1,6 +1,6 @@
 import { render } from 'preact'
 import sentinel from 'sentinel-js'
-import { fetchConversation, processConversation } from './api'
+import { fetchConversation, processConversation } from './providers'
 import { getChatIdFromUrl, isSharePage } from './page'
 import { Menu } from './ui/Menu'
 import { onloadSafe } from './utils/utils'

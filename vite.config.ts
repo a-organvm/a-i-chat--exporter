@@ -63,6 +63,12 @@ export default defineConfig({
                     'https://new.oaifree.com/gpts/*',
                     'https://new.oaifree.com/share/*',
                     'https://new.oaifree.com/share/*/continue',
+
+                    'https://claude.ai/',
+                    'https://claude.ai/new',
+                    'https://claude.ai/chat/*',
+                    'https://claude.ai/project/*',
+                    'https://claude.ai/project/*/chat/*',
                 ],
                 'icon': 'https://chat.openai.com/favicon.ico',
                 'run-at': 'document-end',

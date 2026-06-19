@@ -1,15 +1,15 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { useTranslation } from 'react-i18next'
-import { archiveConversation, deleteConversation, fetchAllConversations, fetchConversation, fetchProjects } from '../api'
 import { exportAllToHtml } from '../exporter/html'
 import { exportAllToJson, exportAllToOfficialJson } from '../exporter/json'
 import { exportAllToMarkdown } from '../exporter/markdown'
+import { archiveConversation, deleteConversation, fetchAllConversations, fetchConversation, fetchProjects, processConversation } from '../providers'
 import { RequestQueue } from '../utils/queue'
 import { CheckBox } from './CheckBox'
 import { IconCross, IconUpload } from './Icons'
 import { useSettingContext } from './SettingContext'
-import type { ApiConversationItem, ApiConversationWithId, ApiProjectInfo } from '../api'
+import type { ApiConversationItem, ApiProjectInfo, ProviderConversation } from '../providers'
 import type { FC } from '../type'
 import type { ChangeEvent } from 'preact/compat'
 
@@ -121,8 +121,9 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [exportSource, setExportSource] = useState<ExportSource>('API')
     const [apiConversations, setApiConversations] = useState<ApiConversationItem[]>([])
-    const [localConversations, setLocalConversations] = useState<ApiConversationWithId[]>([])
-    const conversations = exportSource === 'API' ? apiConversations : localConversations
+    const [localConversations, setLocalConversations] = useState<ProviderConversation[]>([])
+    const localConversationItems = useMemo(() => localConversations.map(conversationToItem), [localConversations])
+    const conversations = exportSource === 'API' ? apiConversations : localConversationItems
     const [projects, setProjects] = useState<ApiProjectInfo[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -133,7 +134,7 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
     const [exportType, setExportType] = useState(exportAllOptions[0].label)
     const disabled = loading || processing || !!error || selected.length === 0
 
-    const requestQueue = useMemo(() => new RequestQueue<ApiConversationWithId>(200, 1600), [])
+    const requestQueue = useMemo(() => new RequestQueue<ProviderConversation>(200, 1600), [])
     const archiveQueue = useMemo(() => new RequestQueue<boolean>(200, 1600), [])
     const deleteQueue = useMemo(() => new RequestQueue<boolean>(200, 1600), [])
     const [progress, setProgress] = useState({
@@ -235,13 +236,17 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
     const exportAllFromLocal = useCallback(() => {
         if (disabled) return
 
-        const results = localConversations.filter(c => selected.some(s => s.id === c.id))
+        const results = localConversations.filter((_, index) => {
+            const item = localConversationItems[index]
+            return item && selected.some(s => s.id === item.id)
+        })
         const callback = exportAllOptions.find(o => o.label === exportType)?.callback
         if (callback) callback(format, results, metaList)
     }, [
         disabled,
         selected,
         localConversations,
+        localConversationItems,
         exportAllOptions,
         exportType,
         format,
@@ -397,4 +402,32 @@ export const ExportDialog: FC<ExportDialogProps> = ({ format, open, onOpenChange
             </Dialog.Portal>
         </Dialog.Root>
     )
+}
+
+function conversationToItem(conversation: ProviderConversation, index: number): ApiConversationItem {
+    try {
+        const result = processConversation(conversation)
+
+        return {
+            id: result.id,
+            title: result.title,
+            create_time: result.createTime,
+        }
+    }
+    catch {
+        const record = isRecord(conversation) ? conversation : {}
+        const id = typeof record.id === 'string' ? record.id : `local-${index}`
+        const title = typeof record.title === 'string' ? record.title : `Conversation ${index + 1}`
+        const createTime = typeof record.create_time === 'number' ? record.create_time : 0
+
+        return {
+            id,
+            title,
+            create_time: createTime,
+        }
+    }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null
 }

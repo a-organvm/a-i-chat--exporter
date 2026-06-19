@@ -1,6 +1,5 @@
-import { fetchConversation, getCurrentChatId, processConversation } from '../api'
 import i18n from '../i18n'
-import { checkIfConversationStarted } from '../page'
+import { checkIfConversationStarted, fetchConversation, getCurrentChatId, processConversation } from '../providers'
 import { copyToClipboard } from '../utils/clipboard'
 import { flatMap, fromMarkdown, toMarkdown } from '../utils/markdown'
 import { standardizeLineBreaks } from '../utils/text'
@@ -155,7 +154,7 @@ function reformatContent(input: string) {
 function transformAuthor(author: ConversationNodeMessage['author']): string {
     switch (author.role) {
         case 'assistant':
-            return 'ChatGPT'
+            return author.name || 'ChatGPT'
         case 'user':
             return 'You'
         case 'tool':
