@@ -1,15 +1,15 @@
 import JSZip from 'jszip'
-import { fetchConversation, getCurrentChatId, processConversation } from '../api'
 import { KEY_TIMESTAMP_24H, KEY_TIMESTAMP_ENABLED, KEY_TIMESTAMP_HTML, baseUrl } from '../constants'
 import i18n from '../i18n'
-import { checkIfConversationStarted, getUserAvatar } from '../page'
+import { getUserAvatar } from '../page'
+import { checkIfConversationStarted, fetchConversation, getCurrentChatId, processConversation } from '../providers'
 import templateHtml from '../template.html?raw'
 import { downloadFile, getFileNameWithFormat } from '../utils/download'
 import { fromMarkdown, toHtml } from '../utils/markdown'
 import { ScriptStorage } from '../utils/storage'
 import { standardizeLineBreaks } from '../utils/text'
 import { dateStr, getColorScheme, timestamp, unixTimestampToISOString } from '../utils/utils'
-import type { ApiConversationWithId, ConversationNodeMessage, ConversationResult } from '../api'
+import type { ConversationNodeMessage, ConversationResult, ProviderConversation } from '../providers'
 import type { ExportMeta } from '../ui/SettingContext'
 
 export async function exportToHtml(fileNameFormat: string, metaList: ExportMeta[]) {
@@ -31,7 +31,7 @@ export async function exportToHtml(fileNameFormat: string, metaList: ExportMeta[
     return true
 }
 
-export async function exportAllToHtml(fileNameFormat: string, apiConversations: ApiConversationWithId[], metaList?: ExportMeta[]) {
+export async function exportAllToHtml(fileNameFormat: string, apiConversations: ProviderConversation[], metaList?: ExportMeta[]) {
     const userAvatar = await getUserAvatar()
 
     const zip = new JSZip()
@@ -174,7 +174,7 @@ function conversationToHtml(conversation: ConversationResult, avatar: string, me
 
     const date = dateStr()
     const time = new Date().toISOString()
-    const source = `${baseUrl}/c/${id}`
+    const source = conversation.sourceUrl ?? `${baseUrl}/c/${id}`
     const lang = document.documentElement.lang ?? 'en'
     const theme = getColorScheme()
 
@@ -219,7 +219,7 @@ function conversationToHtml(conversation: ConversationResult, avatar: string, me
 function transformAuthor(author: ConversationNodeMessage['author']): string {
     switch (author.role) {
         case 'assistant':
-            return 'ChatGPT'
+            return author.name || 'ChatGPT'
         case 'user':
             return 'You'
         case 'tool':

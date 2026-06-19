@@ -1,10 +1,9 @@
 import JSZip from 'jszip'
-import { fetchConversation, getCurrentChatId, processConversation } from '../api'
 import i18n from '../i18n'
-import { checkIfConversationStarted } from '../page'
+import { checkIfConversationStarted, fetchConversation, getCurrentChatId, processConversation } from '../providers'
 import { convertToOoba, convertToTavern } from '../utils/conversion'
 import { downloadFile, getFileNameWithFormat } from '../utils/download'
-import type { ApiConversationWithId } from '../api'
+import type { ProviderConversation } from '../providers'
 
 export async function exportToJson(fileNameFormat: string) {
     if (!checkIfConversationStarted()) {
@@ -60,14 +59,14 @@ export async function exportToOoba(fileNameFormat: string) {
     return true
 }
 
-export async function exportAllToOfficialJson(_fileNameFormat: string, apiConversations: ApiConversationWithId[]) {
+export async function exportAllToOfficialJson(_fileNameFormat: string, apiConversations: ProviderConversation[]) {
     const content = conversationToJson(apiConversations)
     downloadFile('chatgpt-export.json', 'application/json', content)
 
     return true
 }
 
-export async function exportAllToJson(fileNameFormat: string, apiConversations: ApiConversationWithId[]) {
+export async function exportAllToJson(fileNameFormat: string, apiConversations: ProviderConversation[]) {
     const zip = new JSZip()
     const filenameMap = new Map<string, number>()
     const conversations = apiConversations.map(x => ({
@@ -105,6 +104,6 @@ export async function exportAllToJson(fileNameFormat: string, apiConversations: 
     return true
 }
 
-function conversationToJson(conversation: ApiConversationWithId | ApiConversationWithId[]) {
+function conversationToJson(conversation: ProviderConversation | ProviderConversation[]) {
     return JSON.stringify(conversation)
 }
