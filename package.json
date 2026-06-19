@@ -23,7 +23,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "tsc --noEmit",
+    "test": "vitest run && tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky"
