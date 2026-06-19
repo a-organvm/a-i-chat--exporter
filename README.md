@@ -315,6 +315,10 @@ cd a-i-chat--exporter
 pnpm install
 ```
 
+### Checkout Configuration
+
+Set `VITE_LEMON_SQUEEZY_CHECKOUT_URL` to the public Lemon Squeezy hosted checkout URL for the Pro product before running `pnpm dev` or `pnpm build`. Configure the checkout return/fulfillment flow to send users back with `ce_license_key`, `license_key`, or `license` in the query string or hash. The app stores the returned license key in userscript storage and does not require a Lemon Squeezy API key in the client.
+
 ### Development
 
 ```bash

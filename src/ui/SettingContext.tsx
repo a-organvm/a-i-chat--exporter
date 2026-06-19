@@ -1,8 +1,9 @@
 import { createContext, useContext } from 'preact/compat'
-import { useCallback } from 'preact/hooks'
+import { useCallback, useEffect, useMemo } from 'preact/hooks'
 import {
     KEY_EXPORT_ALL_LIMIT,
     KEY_FILENAME_FORMAT,
+    KEY_LICENSE,
     KEY_META_ENABLED,
     KEY_META_LIST,
     KEY_TIMESTAMP_24H,
@@ -11,6 +12,7 @@ import {
     KEY_TIMESTAMP_MARKDOWN,
 } from '../constants'
 import { useGMStorage } from '../hooks/useGMStorage'
+import { getLicenseFromUrl, scrubLicenseReturnUrl } from '../utils/license'
 import type { FC } from 'preact/compat'
 
 const defaultFormat = 'ChatGPT-{title}'
@@ -45,6 +47,9 @@ const SettingContext = createContext({
     setExportMetaList: (_: ExportMeta[]) => {},
     exportAllLimit: defaultExportAllLimit,
     setExportAllLimit: (_: number) => {},
+    license: '',
+    setLicense: (_: string) => {},
+    isPro: false,
     resetDefault: () => {},
 })
 
@@ -60,6 +65,16 @@ export const SettingProvider: FC = ({ children }) => {
 
     const [exportMetaList, setExportMetaList] = useGMStorage(KEY_META_LIST, defaultExportMetaList)
     const [exportAllLimit, setExportAllLimit] = useGMStorage(KEY_EXPORT_ALL_LIMIT, defaultExportAllLimit)
+    const [license, setLicense] = useGMStorage(KEY_LICENSE, '')
+    const isPro = useMemo(() => license.trim().length > 0, [license])
+
+    useEffect(() => {
+        const licenseFromUrl = getLicenseFromUrl()
+        if (!licenseFromUrl) return
+
+        setLicense(licenseFromUrl)
+        scrubLicenseReturnUrl()
+    }, [])
 
     const resetDefault = useCallback(() => {
         setFormat(defaultFormat)
@@ -97,6 +112,10 @@ export const SettingProvider: FC = ({ children }) => {
 
                 exportAllLimit,
                 setExportAllLimit,
+
+                license,
+                setLicense,
+                isPro,
 
                 resetDefault,
             }}

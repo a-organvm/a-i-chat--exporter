@@ -34,6 +34,10 @@ export default defineConfig({
                     'https://chat.openai.com/',
                     // support https://chat.openai.com/?model={model}
                     'https://chat.openai.com/?model=*',
+                    // support Lemon Squeezy checkout return
+                    'https://chat.openai.com/?ce_license_key=*',
+                    'https://chat.openai.com/?license_key=*',
+                    'https://chat.openai.com/?license=*',
                     // support https://chat.openai.com/c/123456789
                     'https://chat.openai.com/c/*',
                     // support https://chat.openai.com/g/g-123456789
@@ -48,6 +52,9 @@ export default defineConfig({
 
                     'https://chatgpt.com/',
                     'https://chatgpt.com/?model=*',
+                    'https://chatgpt.com/?ce_license_key=*',
+                    'https://chatgpt.com/?license_key=*',
+                    'https://chatgpt.com/?license=*',
                     'https://chatgpt.com/c/*',
                     'https://chatgpt.com/g/*',
                     'https://chatgpt.com/gpts',
@@ -57,6 +64,9 @@ export default defineConfig({
 
                     'https://new.oaifree.com/',
                     'https://new.oaifree.com/?model=*',
+                    'https://new.oaifree.com/?ce_license_key=*',
+                    'https://new.oaifree.com/?license_key=*',
+                    'https://new.oaifree.com/?license=*',
                     'https://new.oaifree.com/c/*',
                     'https://new.oaifree.com/g/*',
                     'https://new.oaifree.com/gpts',

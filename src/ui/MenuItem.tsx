@@ -21,7 +21,7 @@ export const MenuItem: FC<MenuItemProps> = ({ text, successText, disabled = fals
     const handleClick = typeof onClick === 'function'
         ? async (e: Event) => {
             e.preventDefault()
-            if (loading) return
+            if (loading || disabled) return
 
             try {
                 setLoading(true)
