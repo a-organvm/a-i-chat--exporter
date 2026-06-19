@@ -26,7 +26,13 @@
     "test": "vitest run && tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "site:build": "node scripts/build-site.mjs --build",
+    "preview:site": "node scripts/build-site.mjs && npx --yes serve dist-site -l 8080",
+    "deploy": "docker compose up -d --build",
+    "deploy:docker": "docker compose up -d --build",
+    "deploy:vercel": "npx --yes vercel deploy --prod",
+    "deploy:cloudflare": "pnpm run site:build && npx --yes wrangler pages deploy dist-site --project-name chatgpt-exporter"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.14",

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm run site:build",
+  "outputDirectory": "dist-site",
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "framework": null,
+  "headers": [
+    {
+      "source": "/chatgpt.user.js",
+      "headers": [
+        { "key": "Content-Type", "value": "text/javascript; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
+  ]
+}

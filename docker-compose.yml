@@ -1,0 +1,12 @@
+# One-command self-host:  docker compose up -d --build
+# Then open http://localhost:8080 to install the userscript.
+services:
+  chatgpt-exporter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: chatgpt-exporter:local
+    container_name: chatgpt-exporter
+    ports:
+      - "${PORT:-8080}:80"
+    restart: unless-stopped

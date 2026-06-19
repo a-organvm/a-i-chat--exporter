@@ -399,6 +399,22 @@ pnpm build
 
 Produces `dist/chatgpt.user.js` — the standalone userscript ready for distribution.
 
+### Deploy (self-host the install page)
+
+Host the userscript plus a one-click install landing page on any static host or
+container. One command:
+
+```bash
+pnpm run deploy            # Docker + nginx → http://localhost:8080
+pnpm run deploy:vercel     # → Vercel
+pnpm run deploy:cloudflare # → Cloudflare Pages
+```
+
+`pnpm run site:build` assembles the deployable `dist-site/` (landing page +
+userscript + headers); `pnpm run preview:site` serves it locally. Pushing to
+`master` also runs `.github/workflows/deploy.yml`. Full details in
+[`docs/deploy.md`](docs/deploy.md).
+
 ### Lint and Type Check
 
 ```bash

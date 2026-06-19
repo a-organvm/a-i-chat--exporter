@@ -1,0 +1,12 @@
+.git
+node_modules
+dist-site
+docs
+*.md
+!package.json
+.github
+.husky
+.vscode
+.idea
+*.log
+.DS_Store

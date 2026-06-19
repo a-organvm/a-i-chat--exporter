@@ -1,0 +1,92 @@
+name: Deploy
+
+# Builds the static install site (landing page + userscript) and deploys it.
+#
+#  • Always: builds dist-site/ and uploads it as a workflow artifact.
+#  • Cloudflare Pages: runs only when CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID secrets are set.
+#  • Docker image: published to GHCR on pushes to master (uses the built-in GITHUB_TOKEN).
+#
+# Manual trigger via the Actions tab is also supported (workflow_dispatch).
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - name: Build static site
+        run: pnpm run site:build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chatgpt-exporter-site
+          path: dist-site
+          if-no-files-found: error
+
+  deploy-cloudflare:
+    needs: build-site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check for Cloudflare credentials
+        id: creds
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$CF_TOKEN" ] && [ -n "$CF_ACCOUNT" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Cloudflare secrets not set — skipping Pages deploy."
+          fi
+      - uses: actions/download-artifact@v4
+        if: steps.creds.outputs.ready == 'true'
+        with:
+          name: chatgpt-exporter-site
+          path: dist-site
+      - name: Deploy to Cloudflare Pages
+        if: steps.creds.outputs.ready == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist-site --project-name=chatgpt-exporter
+
+  docker:
+    needs: build-site
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
