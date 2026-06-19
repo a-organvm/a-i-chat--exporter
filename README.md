@@ -23,6 +23,7 @@ ChatGPT Exporter lives inside ORGAN-III (Ergon), the commerce and product organ 
 
 - [Product Overview](#product-overview)
 - [Why This Tool Exists](#why-this-tool-exists)
+- [Support / Pro](#support--pro)
 - [Technical Architecture](#technical-architecture)
 - [Supported Export Formats](#supported-export-formats)
 - [Installation](#installation)
@@ -71,6 +72,14 @@ The tool is also available through [GreasyFork](https://greasyfork.org/scripts/4
 ChatGPT conversations are ephemeral by default. The web interface offers no native export to Markdown or HTML, no bulk download, and no way to produce archival snapshots. OpenAI's official data export gives you a single massive JSON file that most people cannot use directly. This tool bridges that gap: it turns ChatGPT's internal API responses into formats that researchers, writers, developers, and knowledge workers can actually store, search, share, and reference.
 
 The design philosophy is zero-friction: no accounts, no servers, no cloud dependencies. The userscript runs entirely in your browser, authenticates using your existing ChatGPT session, and produces local files. Your data never leaves your machine.
+
+---
+
+## Support / Pro
+
+ChatGPT Exporter is free and open-source. If it saves you time, the lowest-friction way to support the project today is to [sponsor on GitHub](https://github.com/sponsors/4444J99) or [buy me a coffee](https://ko-fi.com/4444J99).
+
+**AI Chat Exporter Pro** is the paid tier for people who need heavier archival workflows. Pro is planned as a $19 one-time license through the [hosted checkout](https://aichatexporter.com/pro), unlocking bulk export, multi-provider export for ChatGPT, Claude, and Gemini, and premium formats including Markdown, JSON, HTML, and PDF. The free tier stays focused on single-conversation ChatGPT export with no account, no upload, and local files.
 
 ---
 
