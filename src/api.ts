@@ -1,4 +1,5 @@
 import urlcat from 'urlcat'
+import { requireExporterApiAuth } from './auth'
 import { apiUrl, baseUrl } from './constants'
 import { getChatIdFromUrl, getConversationFromSharePage, getPageAccessToken, isSharePage } from './page'
 import { blobToDataURL } from './utils/dom'
@@ -439,6 +440,8 @@ async function replaceImageAssets(conversation: ApiConversation): Promise<void> 
 }
 
 export async function fetchConversation(chatId: string, shouldReplaceAssets: boolean): Promise<ApiConversationWithId> {
+    await requireExporterApiAuth()
+
     if (chatId.startsWith('__share__')) {
         const id = chatId.replace('__share__', '')
         const shareConversation = getConversationFromSharePage() as ApiConversation
@@ -464,6 +467,8 @@ export async function fetchConversation(chatId: string, shouldReplaceAssets: boo
 }
 
 export async function fetchProjects(): Promise<ApiProjectInfo[]> {
+    await requireExporterApiAuth()
+
     const url = projectsApi()
     const { items } = await fetchApi<{ items: ApiGizmo[] }>(url)
     return items.map(gizmo => (gizmo.gizmo.gizmo))
@@ -490,6 +495,8 @@ async function fetchProjectConversations(project: string, offset = 0, limit = 20
 }
 
 export async function fetchAllConversations(project: string | null = null, maxConversations = 1000): Promise<ApiConversationItem[]> {
+    await requireExporterApiAuth()
+
     const conversations: ApiConversationItem[] = []
     const limit = project === null ? 100 : 50 // gizmos api uses a smaller limit
     let offset = 0
@@ -520,6 +527,8 @@ export async function fetchAllConversations(project: string | null = null, maxCo
 }
 
 export async function archiveConversation(chatId: string): Promise<boolean> {
+    await requireExporterApiAuth()
+
     const url = conversationApi(chatId)
     const { success } = await fetchApi<{ success: boolean }>(url, {
         method: 'PATCH',
@@ -530,6 +539,8 @@ export async function archiveConversation(chatId: string): Promise<boolean> {
 }
 
 export async function deleteConversation(chatId: string): Promise<boolean> {
+    await requireExporterApiAuth()
+
     const url = conversationApi(chatId)
     const { success } = await fetchApi<{ success: boolean }>(url, {
         method: 'PATCH',
@@ -540,6 +551,8 @@ export async function deleteConversation(chatId: string): Promise<boolean> {
 }
 
 async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
+    await requireExporterApiAuth()
+
     const accessToken = await getAccessToken()
     const accountId = await getTeamAccountId()
 
