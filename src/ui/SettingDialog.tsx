@@ -36,6 +36,8 @@ export const SettingDialog: FC<SettingDialogProps> = ({
         enableMeta, setEnableMeta,
         exportMetaList, setExportMetaList,
         exportAllLimit, setExportAllLimit,
+        licenseKey, setLicenseKey,
+        hasProLicense,
         /* eslint-enable pionxzh/consistent-list-newline */
     } = useSettingContext()
     const { t, i18n } = useTranslation()
@@ -141,6 +143,30 @@ export const SettingDialog: FC<SettingDialogProps> = ({
                                             {exportAllLimit}
                                         </span>
                                     </div>
+                                </dd>
+                            </div>
+                        </div>
+                        <div className="relative flex bg-white dark:bg-white/5 rounded p-4">
+                            <div>
+                                <dt className="text-md font-medium text-gray-800 dark:text-white">
+                                    {t('Pro License')}
+                                </dt>
+                                <dd className="text-sm text-gray-700 dark:text-gray-300">
+                                    <input
+                                        className="Input mt-3"
+                                        id="proLicenseKey"
+                                        type="password"
+                                        autoComplete="off"
+                                        spellCheck={false}
+                                        value={licenseKey}
+                                        placeholder={t('License Key Placeholder')}
+                                        onChange={e => setLicenseKey(e.currentTarget.value)}
+                                    />
+                                    <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                                        {hasProLicense
+                                            ? t('Pro License Active')
+                                            : t('Pro License Required Description')}
+                                    </p>
                                 </dd>
                             </div>
                         </div>

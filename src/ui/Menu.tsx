@@ -13,7 +13,7 @@ import { Divider } from './Divider'
 import { ExportDialog } from './ExportDialog'
 import { FileCode, IconArrowRightFromBracket, IconCamera, IconCopy, IconJSON, IconMarkdown, IconSetting, IconZip } from './Icons'
 import { MenuItem } from './MenuItem'
-import { SettingProvider, useSettingContext } from './SettingContext'
+import { PRO_FEATURES, SettingProvider, useSettingContext } from './SettingContext'
 import { SettingDialog } from './SettingDialog'
 
 import '../style.css'
@@ -34,6 +34,7 @@ function MenuInner({ container }: { container: HTMLDivElement }) {
         timeStamp24H,
         enableMeta,
         exportMetaList,
+        checkProFeature,
     } = useSettingContext()
 
     useEffect(() => {
@@ -46,6 +47,14 @@ function MenuInner({ container }: { container: HTMLDivElement }) {
     }, [enableTimestamp, timeStamp24H])
 
     const metaList = useMemo(() => enableMeta ? exportMetaList : [], [enableMeta, exportMetaList])
+    const bulkExportGate = useMemo(
+        () => checkProFeature(PRO_FEATURES.bulkExport),
+        [checkProFeature],
+    )
+    const multiProviderExportGate = useMemo(
+        () => checkProFeature(PRO_FEATURES.multiProviderExport),
+        [checkProFeature],
+    )
 
     const onClickText = useCallback(() => exportToText(), [])
     const onClickPng = useCallback(() => exportToPng(format), [format])
@@ -56,8 +65,22 @@ function MenuInner({ container }: { container: HTMLDivElement }) {
         return true
     }, [])
     const onClickOfficialJSON = useCallback(() => exportToJson(format), [format])
-    const onClickTavern = useCallback(() => exportToTavern(format), [format])
-    const onClickOoba = useCallback(() => exportToOoba(format), [format])
+    const onClickTavern = useCallback(() => {
+        if (!multiProviderExportGate.allowed) {
+            alert(t('Pro License Required Message'))
+            return false
+        }
+
+        return exportToTavern(format)
+    }, [format, multiProviderExportGate.allowed, t])
+    const onClickOoba = useCallback(() => {
+        if (!multiProviderExportGate.allowed) {
+            alert(t('Pro License Required Message'))
+            return false
+        }
+
+        return exportToOoba(format)
+    }, [format, multiProviderExportGate.allowed, t])
 
     const width = useWindowResize(() => window.innerWidth)
     const isMobile = width < 768
@@ -184,12 +207,16 @@ function MenuInner({ container }: { container: HTMLDivElement }) {
                                         text="JSONL (TavernAI, SillyTavern)"
                                         icon={IconCopy}
                                         className="row-full"
+                                        disabled={!multiProviderExportGate.allowed}
+                                        title={!multiProviderExportGate.allowed ? t('Pro License Required Message') : undefined}
                                         onClick={onClickTavern}
                                     />
                                     <MenuItem
                                         text="Ooba (text-generation-webui)"
                                         icon={IconCopy}
                                         className="row-full"
+                                        disabled={!multiProviderExportGate.allowed}
+                                        title={!multiProviderExportGate.allowed ? t('Pro License Required Message') : undefined}
                                         onClick={onClickOoba}
                                     />
                                 </Dialog.Content>
@@ -204,6 +231,8 @@ function MenuInner({ container }: { container: HTMLDivElement }) {
                                 <MenuItem
                                     text={t('Export All')}
                                     icon={IconZip}
+                                    disabled={!bulkExportGate.allowed}
+                                    title={!bulkExportGate.allowed ? t('Pro License Required Message') : undefined}
                                 />
                             </div>
                         </ExportDialog>

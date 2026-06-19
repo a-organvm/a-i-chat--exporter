@@ -42,5 +42,10 @@
   "Select Project": "Select Project",
   "(no project)": "(no project)",
   "Export All Limit": "Export All Limit",
-  "Export All Limit Description": "Set the maximum number of conversations to load in the 'Export All' dialog."
+  "Export All Limit Description": "Set the maximum number of conversations to load in the 'Export All' dialog.",
+  "Pro License": "Pro License",
+  "License Key Placeholder": "License key",
+  "Pro License Active": "Pro features are enabled.",
+  "Pro License Required Description": "Enter a Pro license key to enable bulk and multi-provider export.",
+  "Pro License Required Message": "A Pro license key is required for bulk and multi-provider export."
 }

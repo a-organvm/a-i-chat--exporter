@@ -8,7 +8,7 @@ import { exportAllToMarkdown } from '../exporter/markdown'
 import { RequestQueue } from '../utils/queue'
 import { CheckBox } from './CheckBox'
 import { IconCross, IconUpload } from './Icons'
-import { useSettingContext } from './SettingContext'
+import { PRO_FEATURES, useSettingContext } from './SettingContext'
 import type { ApiConversationItem, ApiConversationWithId, ApiProjectInfo } from '../api'
 import type { FC } from '../type'
 import type { ChangeEvent } from 'preact/compat'
@@ -108,8 +108,16 @@ interface DialogContentProps {
 
 const DialogContent: FC<DialogContentProps> = ({ format }) => {
     const { t } = useTranslation()
-    const { enableMeta, exportMetaList, exportAllLimit } = useSettingContext()
+    const { enableMeta, exportMetaList, exportAllLimit, checkProFeature } = useSettingContext()
     const metaList = useMemo(() => enableMeta ? exportMetaList : [], [enableMeta, exportMetaList])
+    const bulkExportGate = useMemo(
+        () => checkProFeature(PRO_FEATURES.bulkExport),
+        [checkProFeature],
+    )
+    const multiProviderExportGate = useMemo(
+        () => checkProFeature(PRO_FEATURES.multiProviderExport),
+        [checkProFeature],
+    )
 
     const exportAllOptions = useMemo(() => [
         { label: 'Markdown', callback: exportAllToMarkdown },
@@ -131,7 +139,7 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
 
     const [selected, setSelected] = useState<ApiConversationItem[]>([])
     const [exportType, setExportType] = useState(exportAllOptions[0].label)
-    const disabled = loading || processing || !!error || selected.length === 0
+    const disabled = !bulkExportGate.allowed || loading || processing || !!error || selected.length === 0
 
     const requestQueue = useMemo(() => new RequestQueue<ApiConversationWithId>(200, 1600), [])
     const archiveQueue = useMemo(() => new RequestQueue<boolean>(200, 1600), [])
@@ -144,6 +152,11 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
     })
 
     const onUpload = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+        if (!multiProviderExportGate.allowed) {
+            alert(t('Pro License Required Message'))
+            return
+        }
+
         const file = (e.target as HTMLInputElement)?.files?.[0]
         if (!file) return
 
@@ -159,7 +172,7 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
             setLocalConversations(data)
         }
         fileReader.readAsText(file)
-    }, [t, setExportSource, setLocalConversations])
+    }, [t, setExportSource, setLocalConversations, multiProviderExportGate.allowed])
 
     useEffect(() => {
         const off = requestQueue.on('progress', (progress) => {
@@ -289,12 +302,24 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
     }, [disabled, selected, archiveQueue, t])
 
     useEffect(() => {
+        if (!bulkExportGate.allowed) {
+            setProjects([])
+            return
+        }
+
         fetchProjects()
             .then(setProjects)
             .catch(err => setError(err.toString()))
-    }, [])
+    }, [bulkExportGate.allowed])
 
     useEffect(() => {
+        if (!bulkExportGate.allowed) {
+            setLoading(false)
+            setApiConversations([])
+            setSelected([])
+            return
+        }
+
         setLoading(true)
         fetchAllConversations(selectedProject?.id, exportAllLimit)
             .then(setApiConversations)
@@ -303,15 +328,25 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
                 setError(err.message || 'Failed to load conversations')
             })
             .finally(() => setLoading(false))
-    }, [selectedProject, exportAllLimit])
+    }, [selectedProject, exportAllLimit, bulkExportGate.allowed])
 
     return (
         <>
             <Dialog.Title className="DialogTitle">{t('Export Dialog Title')}</Dialog.Title>
+            {!bulkExportGate.allowed && (
+                <div className="mb-3 rounded border border-yellow-500/40 bg-yellow-50 p-3 text-sm text-yellow-900 dark:bg-yellow-500/10 dark:text-yellow-100">
+                    {t('Pro License Required Message')}
+                </div>
+            )}
             <div className="flex items-center text-gray-600 dark:text-gray-300 flex justify-between border-b-[1px] pb-3 mb-3 dark:border-gray-700">
                 {t('Export from official export file')} (conversations.json)&nbsp;
                 {exportSource === 'API' && (
-                    <button className="btn relative btn-neutral" onClick={() => fileInputRef.current?.click()}>
+                    <button
+                        className="btn relative btn-neutral"
+                        disabled={!multiProviderExportGate.allowed || processing || loading}
+                        title={!multiProviderExportGate.allowed ? t('Pro License Required Message') : undefined}
+                        onClick={() => fileInputRef.current?.click()}
+                    >
                         <IconUpload className="w-4 h-4" />
                     </button>
                 )}
@@ -328,17 +363,17 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
                     {t('Export from API')}
                 </div>
             )}
-            <ProjectSelect projects={projects} selected={selectedProject} setSelected={setSelectedProject} disabled={processing || loading} />
+            <ProjectSelect projects={projects} selected={selectedProject} setSelected={setSelectedProject} disabled={!bulkExportGate.allowed || processing || loading} />
             <ConversationSelect
                 conversations={conversations}
                 selected={selected}
                 setSelected={setSelected}
-                disabled={processing}
+                disabled={!bulkExportGate.allowed || processing}
                 loading={loading}
                 error={error}
             />
             <div className="flex mt-6" style={{ justifyContent: 'space-between' }}>
-                <select className="Select" disabled={processing} value={exportType} onChange={e => setExportType(e.currentTarget.value)}>
+                <select className="Select" disabled={!bulkExportGate.allowed || processing} value={exportType} onChange={e => setExportType(e.currentTarget.value)}>
                     {exportAllOptions.map(({ label }) => (
                         <option key={t(label)} value={label}>{label}</option>
                     ))}
