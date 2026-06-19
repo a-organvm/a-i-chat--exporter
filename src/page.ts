@@ -1,7 +1,6 @@
 import { unsafeWindow } from 'vite-plugin-monkey/dist/client'
 import { KEY_OAI_HISTORY_DISABLED } from './constants'
 import { getBase64FromImageUrl, getBase64FromImg } from './utils/dom'
-import { logger } from './utils/logger'
 
 declare global {
     interface Window {
@@ -124,7 +123,7 @@ export async function getUserAvatar(): Promise<string> {
         if (picture) return await getBase64FromImageUrl(picture)
     }
     catch (e) {
-        logger.warn('Failed to load user avatar from profile', { error: e })
+        console.error(e)
     }
 
     try {
@@ -134,7 +133,7 @@ export async function getUserAvatar(): Promise<string> {
         if (avatar) return getBase64FromImg(avatar)
     }
     catch (e) {
-        logger.warn('Failed to load user avatar from DOM', { error: e })
+        console.error(e)
     }
 
     return defaultAvatar
