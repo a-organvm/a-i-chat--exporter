@@ -363,8 +363,27 @@ Open the settings panel from the export menu to configure:
 | **Metadata** | Custom key-value pairs appended as YAML front matter (Markdown) or collapsible details (HTML). Template variables: `{title}`, `{date}`, `{timestamp}`, `{source}`, `{model}`, `{model_name}`, `{create_time}`, `{update_time}`. | Empty |
 | **Export all limit** | Maximum number of conversations fetched during bulk export. | 1,000 |
 | **Language** | UI language. | Auto-detected |
+| **API auth** | Issue, unlock, or revoke the exporter API key required before ChatGPT backend export calls run. | Not issued |
 
 All settings persist across sessions via Tampermonkey's storage API.
+
+### API Auth Config Path
+
+The userscript does not ship with a default API key. Open **Exporter Settings**
+and use **API Auth** to issue a key before using API-backed exports. The newly
+issued key is shown once and is verified locally before the primary ChatGPT
+backend calls run.
+
+Secret/config storage:
+
+| Key | Storage | Contents |
+|-----|---------|----------|
+| `exporter:auth:api_key_digest` | Tampermonkey `GM_setValue` via `ScriptStorage`, falling back to `localStorage` if needed | SHA-256 digest of the issued API key |
+| `exporter:auth:api_key_issued_at` | Same persistent script storage | ISO timestamp for the current issued key |
+| `exporter:auth:verified_digest` | `sessionStorage` | Digest authorized for the current browser tab/session |
+
+The plaintext API key is not persisted by the exporter. Revoking the key deletes
+the stored digest, issue timestamp, and current session authorization marker.
 
 ---
 
