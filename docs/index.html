@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatGPT Exporter - Static Landing Page</title>
+<meta name="description" content="Export AI chats to Markdown, HTML, JSON, PNG, and text. Free single-chat export, Pro bulk export, and multi-provider workflows.">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+*{margin:0}
+:root{
+  --paper:#f7f8fb;
+  --panel:#fff;
+  --ink:#18181b;
+  --muted:#5d6470;
+  --line:#d9dee8;
+  --teal:#0f766e;
+  --blue:#2557a7;
+  --orange:#c2410c;
+  --green-soft:#dff7ed;
+  --blue-soft:#e7efff;
+  --orange-soft:#fff0e7;
+  --shadow:0 18px 60px rgba(31,41,55,.14);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"SF Mono","Fira Code",Consolas,monospace;
+}
+body{
+  min-height:100vh;
+  color:var(--ink);
+  background:
+    linear-gradient(135deg,rgba(15,118,110,.10),transparent 28%),
+    linear-gradient(315deg,rgba(194,65,12,.10),transparent 30%),
+    var(--paper);
+  font-family:var(--font);
+  line-height:1.55;
+}
+a{color:inherit}
+.wrap{width:min(1120px,calc(100% - 32px));margin:0 auto}
+.nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:64px;
+  gap:20px;
+}
+.brand{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+  text-decoration:none;
+}
+.brand-mark{
+  display:grid;
+  width:32px;
+  height:32px;
+  place-items:center;
+  border-radius:8px;
+  color:#fff;
+  background:linear-gradient(135deg,var(--teal),var(--blue));
+  font-size:.78rem;
+  letter-spacing:.04em;
+}
+.hero{
+  position:relative;
+  overflow:hidden;
+  border-block:1px solid var(--line);
+}
+.hero::before{
+  content:"";
+  position:absolute;
+  inset:auto -70px -120px auto;
+  width:min(620px,70vw);
+  height:390px;
+  border:1px solid rgba(23,23,27,.14);
+  border-radius:8px;
+  background:
+    linear-gradient(90deg,#0b1220 0 31%,#111827 31%),
+    linear-gradient(135deg,rgba(15,118,110,.25),transparent);
+  box-shadow:var(--shadow);
+  transform:rotate(-2deg);
+}
+.hero::after{
+  content:"MD  HTML  JSON  PNG  TXT";
+  position:absolute;
+  right:80px;
+  bottom:86px;
+  z-index:0;
+  width:min(360px,60vw);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:8px;
+  padding:28px;
+  color:#e5e7eb;
+  background:rgba(255,255,255,.08);
+  font-family:var(--mono);
+  font-size:clamp(.85rem,2vw,1.1rem);
+  letter-spacing:0;
+}
+.hero-inner{
+  position:relative;
+  z-index:1;
+  padding:clamp(54px,8vw,92px) 0 clamp(48px,7vw,76px);
+}
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  margin-bottom:22px;
+  border:1px solid #b7c0cf;
+  border-radius:999px;
+  padding:7px 12px;
+  color:#334155;
+  background:rgba(255,255,255,.78);
+  font-size:.8rem;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.eyebrow::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--teal);
+  box-shadow:0 0 0 4px rgba(15,118,110,.14);
+}
+h1{
+  max-width:760px;
+  font-size:clamp(2.55rem,7vw,5.9rem);
+  line-height:.98;
+  letter-spacing:0;
+}
+.lead{
+  max-width:660px;
+  margin-top:24px;
+  color:#3f4652;
+  font-size:clamp(1.06rem,2vw,1.28rem);
+}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:46px;
+  border:1px solid transparent;
+  border-radius:8px;
+  padding:0 18px;
+  font-weight:800;
+  text-decoration:none;
+}
+.button-primary{color:#fff;background:var(--teal)}
+.button-primary:hover{background:#0b5e58}
+.button-dark{color:#fff;background:var(--ink)}
+.button-dark:hover{background:#2b2b31}
+.button-light{border-color:#b7c0cf;background:#fff}
+.button-light:hover{border-color:var(--ink)}
+.button-arrow::after{
+  content:"";
+  width:8px;
+  height:8px;
+  margin-left:10px;
+  border-top:2px solid currentColor;
+  border-right:2px solid currentColor;
+  transform:rotate(45deg);
+}
+section{padding:64px 0}
+.section-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(260px,420px);
+  gap:28px;
+  align-items:end;
+  margin-bottom:28px;
+}
+.kicker{
+  color:var(--orange);
+  font-size:.78rem;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+h2{
+  margin-top:8px;
+  font-size:clamp(1.9rem,4vw,3rem);
+  line-height:1.04;
+  letter-spacing:0;
+}
+.copy{color:var(--muted)}
+.features,.formats,.pricing{
+  display:grid;
+  gap:16px;
+  list-style:none;
+  padding:0;
+}
+.features{grid-template-columns:repeat(3,minmax(0,1fr))}
+.feature,.plan,.local-card,.format{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:22px;
+  background:rgba(255,255,255,.84);
+  box-shadow:0 8px 30px rgba(31,41,55,.06);
+}
+.tag{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  margin-bottom:18px;
+  border-radius:999px;
+  padding:0 10px;
+  color:#164e63;
+  background:var(--blue-soft);
+  font-size:.72rem;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.feature:nth-child(2) .tag{color:#14532d;background:var(--green-soft)}
+.feature:nth-child(3) .tag{color:#9a3412;background:var(--orange-soft)}
+.feature h3,.local-card h3{font-size:1.24rem;line-height:1.16}
+.feature p,.local-card p{margin-top:12px;color:var(--muted)}
+.feature ul{display:grid;gap:8px;margin-top:16px;padding-left:18px;color:#3f4652}
+.formats{grid-template-columns:repeat(5,minmax(0,1fr))}
+.format strong{display:block;margin-bottom:6px;font-family:var(--mono);font-size:.9rem}
+.format span{color:var(--muted);font-size:.9rem}
+.pricing{grid-template-columns:repeat(2,minmax(0,1fr))}
+.plan{
+  position:relative;
+  display:flex;
+  min-height:430px;
+  flex-direction:column;
+}
+.plan-pro{border-color:var(--teal);box-shadow:0 18px 60px rgba(15,118,110,.18)}
+.plan-badge{
+  position:absolute;
+  top:22px;
+  right:22px;
+  border-radius:999px;
+  padding:5px 9px;
+  color:#7c2d12;
+  background:#ffedd5;
+  font-size:.74rem;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.price{margin-top:14px;font-size:2.6rem;font-weight:900;letter-spacing:0}
+.price small{color:var(--muted);font-size:.95rem;font-weight:700}
+.plan p{min-height:52px;margin-top:10px;color:var(--muted)}
+.plan ul{display:grid;gap:10px;margin:22px 0 26px;padding:0;list-style:none}
+.plan li{position:relative;padding-left:26px;color:#3f4652}
+.plan li::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:.45em;
+  width:12px;
+  height:7px;
+  border-left:2px solid var(--teal);
+  border-bottom:2px solid var(--teal);
+  transform:rotate(-45deg);
+}
+.plan .button{margin-top:auto}
+.local-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+footer{border-top:1px solid var(--line);background:#111827;color:#d1d5db}
+.footer-inner{display:flex;align-items:center;justify-content:space-between;min-height:92px;gap:18px}
+footer a{color:#fff}
+@media (max-width:900px){
+  .section-head,.features,.pricing,.local-grid{grid-template-columns:1fr}
+  .formats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:560px){
+  .wrap{width:min(100% - 24px,1120px)}
+  .hero::before,.hero::after{display:none}
+  .hero-inner{padding:42px 0 36px}
+  .actions{display:grid}
+  .button{width:100%}
+  .formats{grid-template-columns:1fr}
+  section{padding:44px 0}
+  .footer-inner{display:grid;padding:22px 0}
+}
+</style>
+</head>
+<body>
+<header>
+  <nav class="wrap nav" aria-label="Primary navigation">
+    <a class="brand" href="#">
+      <span class="brand-mark">EX</span>
+      <span>ChatGPT Exporter</span>
+    </a>
+    <a class="button button-dark" href="https://aichatexporter.com/pro">Buy Pro</a>
+  </nav>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap hero-inner">
+      <p class="eyebrow">Local-first AI archive tool</p>
+      <h1>Export AI chats without losing the work.</h1>
+      <p class="lead">ChatGPT Exporter turns conversations into durable files: Markdown, HTML, JSON, PNG, and plain text. Start free, then unlock Pro bulk and multi-provider export when your archive becomes part of the job.</p>
+      <div class="actions">
+        <a class="button button-primary button-arrow" href="https://greasyfork.org/scripts/456055-chatgpt-exporter">Install Free</a>
+        <a class="button button-dark button-arrow" href="https://aichatexporter.com/pro">Buy Pro via Lemon Squeezy</a>
+        <a class="button button-light" href="https://github.com/a-organvm/a-i-chat--exporter" target="_blank" rel="noopener">View source</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="wrap" aria-labelledby="features-title">
+    <div class="section-head">
+      <div>
+        <p class="kicker">Feature list</p>
+        <h2 id="features-title">Built for one-off saves and serious archives.</h2>
+      </div>
+      <p class="copy">The free tier keeps individual exports fast. Pro adds the batch workflows and provider coverage needed by researchers, developers, and teams.</p>
+    </div>
+    <ul class="features">
+      <li class="feature">
+        <span class="tag">Multi-provider</span>
+        <h3>One export path for AI chat tools.</h3>
+        <p>Provider-aware workflows for ChatGPT today and Pro coverage designed for Claude and Gemini.</p>
+        <ul>
+          <li>Provider-aware export architecture</li>
+          <li>Consistent archive formats</li>
+          <li>Local browser execution</li>
+        </ul>
+      </li>
+      <li class="feature">
+        <span class="tag">Bulk</span>
+        <h3>Turn hundreds of chats into a ZIP.</h3>
+        <p>Select conversations, filter by project, or export everything at once.</p>
+        <ul>
+          <li>Select-many and select-all export</li>
+          <li>Project-scoped conversation lists</li>
+          <li>Progress feedback while exporting</li>
+        </ul>
+      </li>
+      <li class="feature">
+        <span class="tag">Formats</span>
+        <h3>Choose the file your workflow needs.</h3>
+        <p>Write, analyze, publish, or preserve conversations in portable formats.</p>
+        <ul>
+          <li>Markdown with metadata</li>
+          <li>Self-contained HTML</li>
+          <li>JSON, PNG, and plain text</li>
+        </ul>
+      </li>
+    </ul>
+  </section>
+
+  <section class="wrap" aria-labelledby="formats-title">
+    <div class="section-head">
+      <div>
+        <p class="kicker">Export formats</p>
+        <h2 id="formats-title">Portable files, not another silo.</h2>
+      </div>
+      <p class="copy">Each export is produced in your browser from your existing session and downloads locally.</p>
+    </div>
+    <ul class="formats">
+      <li class="format"><strong>.md</strong><span>Readable Markdown with metadata.</span></li>
+      <li class="format"><strong>.html</strong><span>Self-contained pages for sharing.</span></li>
+      <li class="format"><strong>.json</strong><span>Data for analysis and backups.</span></li>
+      <li class="format"><strong>.png</strong><span>Full-thread screenshots.</span></li>
+      <li class="format"><strong>.txt</strong><span>Clean plain text for quick reuse.</span></li>
+    </ul>
+  </section>
+
+  <section class="wrap" aria-labelledby="pricing-title">
+    <div class="section-head">
+      <div>
+        <p class="kicker">Pricing</p>
+        <h2 id="pricing-title">Free for everyday exports. Pro for batch work.</h2>
+      </div>
+      <p class="copy">Free covers the normal single-conversation workflow. Pro is a one-time license for heavier export jobs.</p>
+    </div>
+    <div class="pricing">
+      <article class="plan" aria-labelledby="free-title">
+        <h3 id="free-title">Free</h3>
+        <div class="price">$0 <small>forever</small></div>
+        <p>For saving individual conversations and keeping your own local archive.</p>
+        <ul>
+          <li>Single-conversation export</li>
+          <li>Markdown, HTML, JSON, PNG, and text</li>
+          <li>Metadata, timestamps, and filename templates</li>
+          <li>Local-only files with no account required</li>
+        </ul>
+        <a class="button button-light" href="https://greasyfork.org/scripts/456055-chatgpt-exporter">Install Free</a>
+      </article>
+      <article class="plan plan-pro" aria-labelledby="pro-title">
+        <span class="plan-badge">Best for archives</span>
+        <h3 id="pro-title">Pro</h3>
+        <div class="price">$19 <small>one-time</small></div>
+        <p>For users who export at scale or work across multiple AI providers.</p>
+        <ul>
+          <li>Everything in Free</li>
+          <li>Bulk export selected or all conversations</li>
+          <li>ZIP archives for Markdown, HTML, and JSON</li>
+          <li>Multi-provider export workflows</li>
+          <li>Priority support for export-heavy use cases</li>
+        </ul>
+        <a class="button button-primary button-arrow" href="https://aichatexporter.com/pro">Buy Pro via Lemon Squeezy</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap" aria-labelledby="local-title">
+    <div class="section-head">
+      <div>
+        <p class="kicker">Local by design</p>
+        <h2 id="local-title">Your conversations stay on your machine.</h2>
+      </div>
+      <p class="copy">The exporter is a browser userscript. It uses your existing chat session and downloads files directly.</p>
+    </div>
+    <div class="local-grid">
+      <article class="local-card">
+        <h3>No cloud processing</h3>
+        <p>Exports are generated locally. The landing page does not add a backend or upload conversations.</p>
+      </article>
+      <article class="local-card">
+        <h3>Open source</h3>
+        <p>The MIT-licensed code is available for review, self-hosting, and contribution.</p>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap footer-inner">
+    <p>Open source under MIT. Source on <a href="https://github.com/a-organvm/a-i-chat--exporter" target="_blank" rel="noopener">GitHub</a>.</p>
+    <p>Static docs landing page.</p>
+  </div>
+</footer>
+</body>
+</html>
