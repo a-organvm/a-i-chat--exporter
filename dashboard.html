@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Exporter Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f1115;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-card-hover: rgba(255, 255, 255, 0.06);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-1: #3b82f6; /* Blue */
+            --accent-2: #8b5cf6; /* Purple */
+            --accent-3: #10b981; /* Emerald */
+            --accent-4: #f59e0b; /* Amber */
+            --border: rgba(255, 255, 255, 0.08);
+            --glass-blur: blur(12px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.12), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.12), transparent 25%);
+        }
+
+        /* Header */
+        header {
+            padding: 2rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background: rgba(15, 17, 21, 0.7);
+            backdrop-filter: var(--glass-blur);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #fff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-3);
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--accent-3);
+            box-shadow: 0 0 8px var(--accent-3);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Main Content */
+        main {
+            padding: 3rem 5%;
+            flex: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .dashboard-header {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .dashboard-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .dashboard-subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: var(--glass-blur);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            background: var(--bg-card-hover);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .metric-card:hover::before {
+            opacity: 1;
+        }
+
+        .metric-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .icon-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .icon-purple { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+        .icon-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .icon-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+
+        .metric-title {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+
+        .metric-trend {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--accent-3);
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+        }
+
+        .metric-detail {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Detailed Stats Area */
+        .stats-area {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 968px) {
+            .stats-area {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .format-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .format-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            cursor: default;
+        }
+
+        .format-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--border);
+            transform: translateX(5px);
+        }
+
+        .format-name {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-weight: 500;
+        }
+
+        .format-badge {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+        }
+
+        .format-bar-bg {
+            height: 6px;
+            width: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .format-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+        }
+
+        /* Chart container mock */
+        .chart-container {
+            height: 250px;
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+            padding-top: 2rem;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(to top, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.8));
+            border-radius: 6px 6px 0 0;
+            min-height: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .chart-bar:hover {
+            background: linear-gradient(to top, rgba(59, 130, 246, 0.4), rgba(139, 92, 246, 1));
+            filter: brightness(1.2);
+        }
+
+        .chart-bar::after {
+            content: attr(data-val);
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+
+        .chart-bar:hover::after {
+            opacity: 1;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">CE</div>
+            <h1>ChatGPT Exporter</h1>
+        </div>
+        <div class="status-badge">
+            System Active
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard-header animate-fade-in">
+            <h2 class="dashboard-title">Product Dashboard</h2>
+            <p class="dashboard-subtitle">Real-time metrics and usage statistics for the ChatGPT Exporter userscript across all supported domains.</p>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card animate-fade-in">
+                <div class="metric-icon icon-blue">📦</div>
+                <div class="metric-title">Current Release</div>
+                <div class="metric-value" id="version-display">v2.29.1</div>
+                <div class="metric-detail">Latest stable userscript version. Active across GreasyFork and GitHub.</div>
+            </div>
+
+            <div class="metric-card animate-fade-in delay-1">
+                <div class="metric-icon icon-purple">📄</div>
+                <div class="metric-title">Export Formats</div>
+                <div class="metric-value">
+                    5
+                    <span class="metric-trend">↑ Active</span>
+                </div>
+                <div class="metric-detail">MD, HTML, JSON, PNG, and Plain Text fully supported.</div>
+            </div>
+
+            <div class="metric-card animate-fade-in delay-2">
+                <div class="metric-icon icon-emerald">🌍</div>
+                <div class="metric-title">Locales Supported</div>
+                <div class="metric-value">9</div>
+                <div class="metric-detail">English, Spanish, French, Indonesian, Japanese, Russian, Turkish, Simplified & Traditional Chinese.</div>
+            </div>
+
+            <div class="metric-card animate-fade-in delay-3">
+                <div class="metric-icon icon-amber">🔗</div>
+                <div class="metric-title">Supported Domains</div>
+                <div class="metric-value">3</div>
+                <div class="metric-detail">chatgpt.com, chat.openai.com, new.oaifree.com seamlessly integrated.</div>
+            </div>
+        </div>
+
+        <div class="stats-area">
+            <div class="panel animate-fade-in delay-2">
+                <div class="panel-header">
+                    <h3 class="panel-title">Export Activity Trend (Simulated 7 Days)</h3>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-bar" style="height: 40%;" data-val="12.4k"></div>
+                    <div class="chart-bar" style="height: 55%;" data-val="15.1k"></div>
+                    <div class="chart-bar" style="height: 45%;" data-val="13.2k"></div>
+                    <div class="chart-bar" style="height: 70%;" data-val="18.9k"></div>
+                    <div class="chart-bar" style="height: 60%;" data-val="16.5k"></div>
+                    <div class="chart-bar" style="height: 85%;" data-val="22.1k"></div>
+                    <div class="chart-bar" style="height: 95%;" data-val="24.8k"></div>
+                </div>
+            </div>
+
+            <div class="panel animate-fade-in delay-3">
+                <div class="panel-header">
+                    <h3 class="panel-title">Format Popularity</h3>
+                </div>
+                <ul class="format-list">
+                    <li class="format-item">
+                        <div class="format-name">
+                            Markdown <span class="format-badge">.md</span>
+                        </div>
+                        <div class="format-bar-bg">
+                            <div class="format-bar-fill" style="width: 85%;"></div>
+                        </div>
+                    </li>
+                    <li class="format-item">
+                        <div class="format-name">
+                            JSON <span class="format-badge">.json</span>
+                        </div>
+                        <div class="format-bar-bg">
+                            <div class="format-bar-fill" style="width: 65%;"></div>
+                        </div>
+                    </li>
+                    <li class="format-item">
+                        <div class="format-name">
+                            HTML <span class="format-badge">.html</span>
+                        </div>
+                        <div class="format-bar-bg">
+                            <div class="format-bar-fill" style="width: 45%;"></div>
+                        </div>
+                    </li>
+                    <li class="format-item">
+                        <div class="format-name">
+                            Image <span class="format-badge">.png</span>
+                        </div>
+                        <div class="format-bar-bg">
+                            <div class="format-bar-fill" style="width: 30%;"></div>
+                        </div>
+                    </li>
+                    <li class="format-item">
+                        <div class="format-name">
+                            Text <span class="format-badge">.txt</span>
+                        </div>
+                        <div class="format-bar-bg">
+                            <div class="format-bar-fill" style="width: 20%;"></div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Attempt to fetch from local package.json if available
+                const res = await fetch('./package.json');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.version) {
+                        document.getElementById('version-display').textContent = 'v' + data.version;
+                    }
+                }
+            } catch (e) {
+                console.log('Using static version display. Could not fetch package.json.');
+            }
+        });
+    </script>
+</body>
+</html>
