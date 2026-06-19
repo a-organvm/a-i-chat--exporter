@@ -1,15 +1,15 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { useTranslation } from 'react-i18next'
-import { archiveConversation, deleteConversation, fetchAllConversations, fetchConversation, fetchProjects } from '../api'
 import { exportAllToHtml } from '../exporter/html'
 import { exportAllToJson, exportAllToOfficialJson } from '../exporter/json'
 import { exportAllToMarkdown } from '../exporter/markdown'
+import { getActiveProvider } from '../providers'
 import { RequestQueue } from '../utils/queue'
 import { CheckBox } from './CheckBox'
 import { IconCross, IconUpload } from './Icons'
 import { useSettingContext } from './SettingContext'
-import type { ApiConversationItem, ApiConversationWithId, ApiProjectInfo } from '../api'
+import type { ApiConversationItem, ApiConversationWithId, ApiProjectInfo } from '../providers'
 import type { FC } from '../type'
 import type { ChangeEvent } from 'preact/compat'
 
@@ -119,6 +119,7 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
     ], [])
 
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const provider = getActiveProvider()
     const [exportSource, setExportSource] = useState<ExportSource>('API')
     const [apiConversations, setApiConversations] = useState<ApiConversationItem[]>([])
     const [localConversations, setLocalConversations] = useState<ApiConversationWithId[]>([])
@@ -225,12 +226,12 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
         selected.forEach(({ id, title }) => {
             requestQueue.add({
                 name: title,
-                request: () => fetchConversation(id, exportType !== 'JSON'),
+                request: () => provider.fetchConversation(id, exportType !== 'JSON'),
             })
         })
 
         requestQueue.start()
-    }, [disabled, selected, requestQueue, exportType])
+    }, [disabled, selected, requestQueue, exportType, provider])
 
     const exportAllFromLocal = useCallback(() => {
         if (disabled) return
@@ -263,12 +264,12 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
         selected.forEach(({ id, title }) => {
             deleteQueue.add({
                 name: title,
-                request: () => deleteConversation(id),
+                request: () => provider.deleteConversation(id),
             })
         })
 
         deleteQueue.start()
-    }, [disabled, selected, deleteQueue, t])
+    }, [disabled, selected, deleteQueue, provider, t])
 
     const archiveAll = useCallback(() => {
         if (disabled) return
@@ -281,29 +282,29 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
         selected.forEach(({ id, title }) => {
             archiveQueue.add({
                 name: title,
-                request: () => archiveConversation(id),
+                request: () => provider.archiveConversation(id),
             })
         })
 
         archiveQueue.start()
-    }, [disabled, selected, archiveQueue, t])
+    }, [disabled, selected, archiveQueue, provider, t])
 
     useEffect(() => {
-        fetchProjects()
+        provider.fetchProjects()
             .then(setProjects)
             .catch(err => setError(err.toString()))
-    }, [])
+    }, [provider])
 
     useEffect(() => {
         setLoading(true)
-        fetchAllConversations(selectedProject?.id, exportAllLimit)
+        provider.fetchAllConversations(selectedProject?.id, exportAllLimit)
             .then(setApiConversations)
             .catch((err) => {
                 console.error('Error fetching conversations:', err)
                 setError(err.message || 'Failed to load conversations')
             })
             .finally(() => setLoading(false))
-    }, [selectedProject, exportAllLimit])
+    }, [provider, selectedProject, exportAllLimit])
 
     return (
         <>

@@ -1,15 +1,15 @@
 import JSZip from 'jszip'
-import { fetchConversation, getCurrentChatId, processConversation } from '../api'
 import { KEY_TIMESTAMP_24H, KEY_TIMESTAMP_ENABLED, KEY_TIMESTAMP_HTML, baseUrl } from '../constants'
 import i18n from '../i18n'
 import { checkIfConversationStarted, getUserAvatar } from '../page'
+import { getActiveProvider } from '../providers'
 import templateHtml from '../template.html?raw'
 import { downloadFile, getFileNameWithFormat } from '../utils/download'
 import { fromMarkdown, toHtml } from '../utils/markdown'
 import { ScriptStorage } from '../utils/storage'
 import { standardizeLineBreaks } from '../utils/text'
 import { dateStr, getColorScheme, timestamp, unixTimestampToISOString } from '../utils/utils'
-import type { ApiConversationWithId, ConversationNodeMessage, ConversationResult } from '../api'
+import type { ApiConversationWithId, ConversationNodeMessage, ConversationResult } from '../providers'
 import type { ExportMeta } from '../ui/SettingContext'
 
 export async function exportToHtml(fileNameFormat: string, metaList: ExportMeta[]) {
@@ -20,9 +20,10 @@ export async function exportToHtml(fileNameFormat: string, metaList: ExportMeta[
 
     const userAvatar = await getUserAvatar()
 
-    const chatId = await getCurrentChatId()
-    const rawConversation = await fetchConversation(chatId, true)
-    const conversation = processConversation(rawConversation)
+    const provider = getActiveProvider()
+    const chatId = await provider.getCurrentChatId()
+    const rawConversation = await provider.fetchConversation(chatId, true)
+    const conversation = provider.processConversation(rawConversation)
     const html = conversationToHtml(conversation, userAvatar, metaList)
 
     const fileName = getFileNameWithFormat(fileNameFormat, 'html', { title: conversation.title, chatId, createTime: conversation.createTime, updateTime: conversation.updateTime })
@@ -33,10 +34,11 @@ export async function exportToHtml(fileNameFormat: string, metaList: ExportMeta[
 
 export async function exportAllToHtml(fileNameFormat: string, apiConversations: ApiConversationWithId[], metaList?: ExportMeta[]) {
     const userAvatar = await getUserAvatar()
+    const provider = getActiveProvider()
 
     const zip = new JSZip()
     const filenameMap = new Map<string, number>()
-    const conversations = apiConversations.map(x => processConversation(x))
+    const conversations = apiConversations.map(x => provider.processConversation(x))
     conversations.forEach((conversation) => {
         let fileName = getFileNameWithFormat(fileNameFormat, 'html', {
             title: conversation.title,

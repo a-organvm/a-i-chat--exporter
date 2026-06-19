@@ -1,7 +1,7 @@
 import { render } from 'preact'
 import sentinel from 'sentinel-js'
-import { fetchConversation, processConversation } from './api'
 import { getChatIdFromUrl, isSharePage } from './page'
+import { getActiveProvider } from './providers'
 import { Menu } from './ui/Menu'
 import { onloadSafe } from './utils/utils'
 
@@ -65,8 +65,9 @@ function main() {
             if (!currentChatId || currentChatId === chatId) return
             chatId = currentChatId
 
-            const rawConversation = await fetchConversation(chatId, false)
-            const { conversationNodes } = processConversation(rawConversation)
+            const provider = getActiveProvider()
+            const rawConversation = await provider.fetchConversation(chatId, false)
+            const { conversationNodes } = provider.processConversation(rawConversation)
 
             const threadContents = Array.from(document.querySelectorAll('main [data-testid^="conversation-turn-"] [data-message-id]'))
             if (threadContents.length === 0) return

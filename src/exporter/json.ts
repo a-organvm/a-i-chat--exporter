@@ -1,10 +1,10 @@
 import JSZip from 'jszip'
-import { fetchConversation, getCurrentChatId, processConversation } from '../api'
 import i18n from '../i18n'
 import { checkIfConversationStarted } from '../page'
+import { getActiveProvider } from '../providers'
 import { convertToOoba, convertToTavern } from '../utils/conversion'
 import { downloadFile, getFileNameWithFormat } from '../utils/download'
-import type { ApiConversationWithId } from '../api'
+import type { ApiConversationWithId } from '../providers'
 
 export async function exportToJson(fileNameFormat: string) {
     if (!checkIfConversationStarted()) {
@@ -12,9 +12,10 @@ export async function exportToJson(fileNameFormat: string) {
         return false
     }
 
-    const chatId = await getCurrentChatId()
-    const rawConversation = await fetchConversation(chatId, false)
-    const conversation = processConversation(rawConversation)
+    const provider = getActiveProvider()
+    const chatId = await provider.getCurrentChatId()
+    const rawConversation = await provider.fetchConversation(chatId, false)
+    const conversation = provider.processConversation(rawConversation)
 
     const fileName = getFileNameWithFormat(fileNameFormat, 'json', { title: conversation.title, chatId })
     /**
@@ -32,9 +33,10 @@ export async function exportToTavern(fileNameFormat: string) {
         return false
     }
 
-    const chatId = await getCurrentChatId()
-    const rawConversation = await fetchConversation(chatId, false)
-    const conversation = processConversation(rawConversation)
+    const provider = getActiveProvider()
+    const chatId = await provider.getCurrentChatId()
+    const rawConversation = await provider.fetchConversation(chatId, false)
+    const conversation = provider.processConversation(rawConversation)
 
     const fileName = getFileNameWithFormat(`${fileNameFormat}.tavern`, 'jsonl', { title: conversation.title, chatId })
     const content = convertToTavern(conversation)
@@ -49,9 +51,10 @@ export async function exportToOoba(fileNameFormat: string) {
         return false
     }
 
-    const chatId = await getCurrentChatId()
-    const rawConversation = await fetchConversation(chatId, false)
-    const conversation = processConversation(rawConversation)
+    const provider = getActiveProvider()
+    const chatId = await provider.getCurrentChatId()
+    const rawConversation = await provider.fetchConversation(chatId, false)
+    const conversation = provider.processConversation(rawConversation)
 
     const fileName = getFileNameWithFormat(`${fileNameFormat}.ooba`, 'json', { title: conversation.title, chatId })
     const content = convertToOoba(conversation)
@@ -68,10 +71,11 @@ export async function exportAllToOfficialJson(_fileNameFormat: string, apiConver
 }
 
 export async function exportAllToJson(fileNameFormat: string, apiConversations: ApiConversationWithId[]) {
+    const provider = getActiveProvider()
     const zip = new JSZip()
     const filenameMap = new Map<string, number>()
     const conversations = apiConversations.map(x => ({
-        conversation: processConversation(x),
+        conversation: provider.processConversation(x),
         rawConversation: x,
     }))
     conversations.forEach(({ conversation, rawConversation }) => {
