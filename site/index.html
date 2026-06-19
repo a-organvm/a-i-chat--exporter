@@ -3,93 +3,718 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ChatGPT Exporter — Install</title>
-<meta name="description" content="Easily export your entire ChatGPT conversation history into Markdown, HTML, JSON, PNG, and plain text. Runs locally in your browser.">
+<title>ChatGPT Exporter - AI chat exports for Markdown, HTML, JSON, PNG, and text</title>
+<meta name="description" content="Export AI chat conversations into portable formats. Free single-chat exports, Pro bulk export, and multi-provider workflows for ChatGPT, Claude, and Gemini.">
 <link rel="icon" href="https://chat.openai.com/favicon.ico">
-<!-- One-click install landing page. The userscript is served alongside this file as ./chatgpt.user.js -->
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box}
+*{margin:0}
 :root{
-  --bg-primary:#0a0f1e;--bg-secondary:#0f1730;--accent:#3b82f6;--accent-2:#10b981;
-  --text-primary:#e5e7eb;--text-muted:#94a3b8;--card-bg:rgba(255,255,255,.04);
-  --card-border:rgba(59,130,246,.2);
-  --font:-apple-system,'Segoe UI','Helvetica Neue',sans-serif;
-  --mono:'SF Mono','Fira Code','Consolas',monospace;
+  --paper:#f7f8fb;
+  --panel:#ffffff;
+  --ink:#18181b;
+  --muted:#5d6470;
+  --line:#d9dee8;
+  --line-strong:#b7c0cf;
+  --teal:#0f766e;
+  --blue:#2557a7;
+  --orange:#c2410c;
+  --yellow:#f7c948;
+  --green-soft:#dff7ed;
+  --blue-soft:#e7efff;
+  --orange-soft:#fff0e7;
+  --shadow:0 18px 60px rgba(31,41,55,.14);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"SF Mono","Fira Code",Consolas,monospace;
 }
-html{font-size:16px}
-body{font-family:var(--font);color:var(--text-primary);background:
-  radial-gradient(1200px 600px at 50% -10%,rgba(59,130,246,.15),transparent),var(--bg-primary);
-  line-height:1.6;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem}
-main{width:100%;max-width:760px}
-.badge{display:inline-block;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--text-muted);border:1px solid var(--card-border);border-radius:999px;padding:.3rem .8rem;margin-bottom:1.5rem}
-h1{font-size:clamp(2rem,6vw,3.2rem);line-height:1.1;margin-bottom:1rem;font-weight:800}
-h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.lead{font-size:1.1rem;color:var(--text-muted);margin-bottom:2rem;max-width:60ch}
-.version{font-family:var(--mono);font-size:.85rem;color:var(--text-muted);margin-bottom:2rem}
-.cta{display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:2.5rem}
-.btn{display:inline-flex;align-items:center;gap:.5rem;font-weight:600;font-size:1rem;
-  padding:.85rem 1.6rem;border-radius:10px;text-decoration:none;border:1px solid transparent;transition:.15s}
-.btn-primary{background:linear-gradient(90deg,var(--accent),#2563eb);color:#fff}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(59,130,246,.35)}
-.btn-secondary{background:var(--card-bg);color:var(--text-primary);border-color:var(--card-border)}
-.btn-secondary:hover{border-color:var(--accent)}
-.note{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:2rem}
-.note strong{color:var(--accent)}
-.note a{color:var(--accent)}
-.steps{list-style:none;counter-reset:step;display:grid;gap:1rem;margin-bottom:2.5rem}
-.steps li{counter-increment:step;position:relative;padding-left:3rem;color:var(--text-muted)}
-.steps li::before{content:counter(step);position:absolute;left:0;top:-.1rem;width:2rem;height:2rem;
-  display:flex;align-items:center;justify-content:center;border-radius:50%;
-  background:var(--card-bg);border:1px solid var(--card-border);color:var(--accent);font-weight:700;font-family:var(--mono)}
-.steps b{color:var(--text-primary)}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2.5rem}
-.card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:1.1rem 1.2rem}
-.card h3{font-size:1rem;margin-bottom:.35rem}
-.card p{font-size:.9rem;color:var(--text-muted)}
-footer{color:var(--text-muted);font-size:.85rem;border-top:1px solid var(--card-border);padding-top:1.5rem;margin-top:1rem}
-footer a{color:var(--accent)}
+html{scroll-behavior:smooth}
+body{
+  min-height:100vh;
+  color:var(--ink);
+  background:
+    linear-gradient(135deg,rgba(15,118,110,.10),transparent 28%),
+    linear-gradient(315deg,rgba(194,65,12,.10),transparent 30%),
+    var(--paper);
+  font-family:var(--font);
+  line-height:1.55;
+}
+a{color:inherit}
+.site-header{
+  position:sticky;
+  top:0;
+  z-index:20;
+  border-bottom:1px solid rgba(217,222,232,.86);
+  background:rgba(247,248,251,.86);
+  backdrop-filter:blur(16px);
+}
+.nav{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:min(1120px,calc(100% - 32px));
+  min-height:64px;
+  margin:0 auto;
+  gap:20px;
+}
+.brand{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+  text-decoration:none;
+}
+.brand-mark{
+  display:grid;
+  width:32px;
+  height:32px;
+  place-items:center;
+  border:1px solid var(--line-strong);
+  border-radius:8px;
+  color:#fff;
+  background:linear-gradient(135deg,var(--teal),var(--blue));
+  font-size:.78rem;
+  letter-spacing:.04em;
+}
+.nav-links{
+  display:flex;
+  align-items:center;
+  gap:22px;
+  color:var(--muted);
+  font-size:.94rem;
+}
+.nav-links a{text-decoration:none}
+.nav-links a:hover{color:var(--ink)}
+.nav-cta{
+  display:inline-flex;
+  align-items:center;
+  min-height:38px;
+  padding:0 14px;
+  border-radius:8px;
+  color:#fff;
+  background:var(--ink);
+  font-weight:700;
+  text-decoration:none;
+}
+.hero{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  min-height:72svh;
+  border-bottom:1px solid var(--line);
+}
+.hero-art{
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  overflow:hidden;
+}
+.hero-art::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(90deg,rgba(247,248,251,.97) 0%,rgba(247,248,251,.86) 48%,rgba(247,248,251,.55) 100%),
+    radial-gradient(circle at 80% 24%,rgba(247,201,72,.28),transparent 30%),
+    radial-gradient(circle at 75% 78%,rgba(15,118,110,.20),transparent 34%);
+}
+.product-preview{
+  position:absolute;
+  top:9%;
+  right:max(-120px,calc((100vw - 1120px) / 2 - 50px));
+  width:min(640px,58vw);
+  min-width:470px;
+  transform:rotate(-2deg);
+  border:1px solid rgba(23,23,27,.16);
+  border-radius:8px;
+  background:#111827;
+  box-shadow:var(--shadow);
+}
+.preview-topbar{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  height:34px;
+  padding:0 13px;
+  border-bottom:1px solid rgba(255,255,255,.10);
+}
+.dot{width:9px;height:9px;border-radius:50%;background:#ef4444}
+.dot:nth-child(2){background:#f59e0b}
+.dot:nth-child(3){background:#22c55e}
+.preview-body{
+  display:grid;
+  grid-template-columns:190px 1fr;
+  min-height:390px;
+}
+.preview-sidebar{
+  padding:18px;
+  color:#d1d5db;
+  background:#0b1220;
+  border-right:1px solid rgba(255,255,255,.08);
+}
+.preview-label{
+  font-size:.72rem;
+  font-weight:800;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+  color:#94a3b8;
+}
+.preview-menu{display:grid;gap:8px;margin-top:16px}
+.preview-menu span{
+  display:block;
+  height:34px;
+  border-radius:8px;
+  background:rgba(255,255,255,.07);
+}
+.preview-menu span:nth-child(2){background:rgba(15,118,110,.38)}
+.preview-main{padding:22px}
+.preview-card{
+  max-width:360px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;
+  background:#f8fafc;
+  color:var(--ink);
+  box-shadow:0 20px 50px rgba(0,0,0,.22);
+}
+.preview-card h2{
+  padding:18px 20px 0;
+  font-size:1rem;
+}
+.preview-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 20px;
+  border-top:1px solid #e2e8f0;
+  color:#475569;
+  font-size:.86rem;
+}
+.preview-row:first-of-type{border-top:0}
+.preview-pill{
+  border-radius:999px;
+  padding:4px 9px;
+  background:var(--green-soft);
+  color:#0f766e;
+  font-weight:800;
+  font-size:.74rem;
+}
+.preview-formats{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  padding:0 20px 20px;
+}
+.preview-formats span{
+  border:1px solid #cbd5e1;
+  border-radius:8px;
+  padding:5px 8px;
+  color:#334155;
+  background:#fff;
+  font-family:var(--mono);
+  font-size:.75rem;
+}
+.hero-inner{
+  width:min(1120px,calc(100% - 32px));
+  margin:0 auto;
+  padding:clamp(54px,8vw,94px) 0 clamp(42px,7vw,76px);
+}
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  width:max-content;
+  margin-bottom:22px;
+  border:1px solid var(--line-strong);
+  border-radius:999px;
+  padding:7px 12px;
+  color:#334155;
+  background:rgba(255,255,255,.78);
+  font-size:.8rem;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.eyebrow::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--teal);
+  box-shadow:0 0 0 4px rgba(15,118,110,.14);
+}
+h1{
+  max-width:760px;
+  font-size:clamp(2.55rem,7vw,5.9rem);
+  line-height:.98;
+  letter-spacing:0;
+}
+.lead{
+  max-width:660px;
+  margin-top:24px;
+  color:#3f4652;
+  font-size:clamp(1.06rem,2vw,1.28rem);
+}
+.hero-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-top:30px;
+}
+.button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:46px;
+  border:1px solid transparent;
+  border-radius:8px;
+  padding:0 18px;
+  font-weight:800;
+  text-decoration:none;
+}
+.button-primary{color:#fff;background:var(--teal)}
+.button-primary:hover{background:#0b5e58}
+.button-dark{color:#fff;background:var(--ink)}
+.button-dark:hover{background:#2b2b31}
+.button-light{
+  border-color:var(--line-strong);
+  color:var(--ink);
+  background:#fff;
+}
+.button-light:hover{border-color:var(--ink)}
+.button-arrow::after{
+  content:"";
+  width:8px;
+  height:8px;
+  margin-left:10px;
+  border-top:2px solid currentColor;
+  border-right:2px solid currentColor;
+  transform:rotate(45deg);
+}
+.hero-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:26px;
+  color:#4b5563;
+  font-size:.92rem;
+}
+.hero-meta span{
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:6px 10px;
+  background:rgba(255,255,255,.72);
+}
+section{
+  width:min(1120px,calc(100% - 32px));
+  margin:0 auto;
+  padding:64px 0;
+}
+.section-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(260px,420px);
+  gap:28px;
+  align-items:end;
+  margin-bottom:28px;
+}
+.section-kicker{
+  color:var(--orange);
+  font-size:.78rem;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+h2{
+  margin-top:8px;
+  font-size:clamp(1.9rem,4vw,3rem);
+  line-height:1.04;
+  letter-spacing:0;
+}
+.section-copy{color:var(--muted);font-size:1rem}
+.features{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+  list-style:none;
+  padding:0;
+}
+.feature-card{
+  min-height:230px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:22px;
+  background:rgba(255,255,255,.82);
+  box-shadow:0 8px 30px rgba(31,41,55,.06);
+}
+.feature-tag{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  margin-bottom:18px;
+  border-radius:999px;
+  padding:0 10px;
+  color:#164e63;
+  background:var(--blue-soft);
+  font-size:.72rem;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.feature-card:nth-child(2) .feature-tag{color:#14532d;background:var(--green-soft)}
+.feature-card:nth-child(3) .feature-tag{color:#9a3412;background:var(--orange-soft)}
+.feature-card h3{font-size:1.24rem;line-height:1.16}
+.feature-card p{margin-top:12px;color:var(--muted)}
+.feature-card ul{
+  display:grid;
+  gap:8px;
+  margin-top:16px;
+  padding-left:18px;
+  color:#3f4652;
+}
+.formats-band{
+  border-block:1px solid var(--line);
+  background:#fff;
+}
+.formats-band section{padding:46px 0}
+.format-list{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+  list-style:none;
+  padding:0;
+}
+.format-list li{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:16px;
+  background:var(--paper);
+}
+.format-list strong{
+  display:block;
+  margin-bottom:6px;
+  font-family:var(--mono);
+  font-size:.9rem;
+}
+.format-list span{color:var(--muted);font-size:.9rem}
+.pricing{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+.plan{
+  position:relative;
+  display:flex;
+  min-height:460px;
+  flex-direction:column;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:26px;
+  background:#fff;
+  box-shadow:0 10px 40px rgba(31,41,55,.08);
+}
+.plan-pro{
+  border-color:#0f766e;
+  box-shadow:0 18px 60px rgba(15,118,110,.18);
+}
+.plan-badge{
+  position:absolute;
+  top:22px;
+  right:22px;
+  border-radius:999px;
+  padding:5px 9px;
+  color:#7c2d12;
+  background:#ffedd5;
+  font-size:.74rem;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.plan h3{font-size:1.46rem}
+.price{
+  margin-top:14px;
+  font-size:2.6rem;
+  font-weight:900;
+  letter-spacing:0;
+}
+.price small{
+  color:var(--muted);
+  font-size:.95rem;
+  font-weight:700;
+}
+.plan p{
+  min-height:52px;
+  margin-top:10px;
+  color:var(--muted);
+}
+.plan ul{
+  display:grid;
+  gap:10px;
+  margin:22px 0 26px;
+  padding:0;
+  list-style:none;
+}
+.plan li{
+  position:relative;
+  padding-left:26px;
+  color:#3f4652;
+}
+.plan li::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:.45em;
+  width:12px;
+  height:7px;
+  border-left:2px solid var(--teal);
+  border-bottom:2px solid var(--teal);
+  transform:rotate(-45deg);
+}
+.plan .button{margin-top:auto}
+.privacy{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.privacy-card{
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:24px;
+  background:rgba(255,255,255,.82);
+}
+.privacy-card h3{font-size:1.2rem}
+.privacy-card p{margin-top:10px;color:var(--muted)}
+.site-footer{
+  border-top:1px solid var(--line);
+  background:#111827;
+  color:#d1d5db;
+}
+.footer-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:min(1120px,calc(100% - 32px));
+  min-height:92px;
+  margin:0 auto;
+  gap:18px;
+}
+.footer-inner a{color:#fff}
+.version{
+  color:#9ca3af;
+  font-family:var(--mono);
+  font-size:.84rem;
+}
+@media (max-width:900px){
+  .nav-links{display:none}
+  .product-preview{
+    top:auto;
+    right:-190px;
+    bottom:-80px;
+    width:640px;
+    opacity:.28;
+  }
+  .section-head,.pricing,.privacy{grid-template-columns:1fr}
+  .features{grid-template-columns:1fr}
+  .format-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .plan{min-height:auto}
+}
+@media (max-width:560px){
+  .nav{width:min(100% - 24px,1120px);min-height:58px}
+  .brand span:last-child{max-width:178px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hero{min-height:auto}
+  .hero-inner{width:min(100% - 24px,1120px);padding:42px 0 36px}
+  .eyebrow{font-size:.68rem}
+  h1{font-size:clamp(2.45rem,15vw,3.5rem)}
+  .lead{font-size:1rem}
+  .hero-actions{display:grid}
+  .button{width:100%}
+  section{width:min(100% - 24px,1120px);padding:44px 0}
+  .format-list{grid-template-columns:1fr}
+  .product-preview{display:none}
+  .footer-inner{display:grid;padding:22px 0}
+}
 </style>
 </head>
 <body>
-<main>
-  <span class="badge">Userscript · Runs 100% locally</span>
-  <h1>ChatGPT&nbsp;<span class="grad">Exporter</span></h1>
-  <p class="lead">Export your entire ChatGPT conversation history into portable, archival-quality formats — Markdown, HTML, JSON, PNG, and plain text. Your data never leaves your machine.</p>
-  <p class="version">version __VERSION__ · built __BUILT_AT__</p>
+<header class="site-header">
+  <nav class="nav" aria-label="Primary navigation">
+    <a class="brand" href="#top" aria-label="ChatGPT Exporter home">
+      <span class="brand-mark">EX</span>
+      <span>ChatGPT Exporter</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#formats">Formats</a>
+      <a href="#pricing">Pricing</a>
+      <a class="nav-cta" href="https://aichatexporter.com/pro">Buy Pro</a>
+    </div>
+  </nav>
+</header>
 
-  <div class="cta">
-    <a class="btn btn-primary" href="./chatgpt.user.js">⬇ Install userscript</a>
-    <a class="btn btn-secondary" href="https://www.tampermonkey.net/" target="_blank" rel="noopener">Get Tampermonkey first</a>
+<main id="top">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-art" aria-hidden="true">
+      <div class="product-preview">
+        <div class="preview-topbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="preview-body">
+          <div class="preview-sidebar">
+            <p class="preview-label">Exporter</p>
+            <div class="preview-menu"><span></span><span></span><span></span><span></span></div>
+          </div>
+          <div class="preview-main">
+            <div class="preview-card">
+              <h2>Export conversations</h2>
+              <div class="preview-row"><span>Provider</span><strong>ChatGPT</strong></div>
+              <div class="preview-row"><span>Mode</span><span class="preview-pill">Bulk ZIP</span></div>
+              <div class="preview-row"><span>Scope</span><strong>Project + selected chats</strong></div>
+              <div class="preview-formats"><span>MD</span><span>HTML</span><span>JSON</span><span>PNG</span><span>TXT</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-inner">
+      <p class="eyebrow">Local-first AI archive tool</p>
+      <h1 id="hero-title">Export AI chats without losing the work.</h1>
+      <p class="lead">ChatGPT Exporter turns conversations into durable files: Markdown, HTML, JSON, PNG, and plain text. Start free, then unlock Pro bulk and multi-provider export when your archive becomes part of the job.</p>
+      <div class="hero-actions">
+        <a class="button button-primary button-arrow" href="./chatgpt.user.js">Install free userscript</a>
+        <a class="button button-dark button-arrow" href="https://aichatexporter.com/pro">Buy Pro via Lemon Squeezy</a>
+        <a class="button button-light" href="https://github.com/a-organvm/a-i-chat--exporter" target="_blank" rel="noopener">View source</a>
+      </div>
+      <div class="hero-meta" aria-label="Product facts">
+        <span>No account required</span>
+        <span>No chat upload</span>
+        <span>Version __VERSION__</span>
+        <span>Built __BUILT_AT__</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="features" aria-labelledby="features-title">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">Feature list</p>
+        <h2 id="features-title">Built for one-off saves and serious archives.</h2>
+      </div>
+      <p class="section-copy">The free tier keeps individual exports fast. Pro adds the batch workflows and provider coverage needed by researchers, developers, and teams.</p>
+    </div>
+    <ul class="features">
+      <li class="feature-card">
+        <span class="feature-tag">Multi-provider</span>
+        <h3>One export path for AI chat tools.</h3>
+        <p>Use the provider layer for ChatGPT today and Pro workflows designed for Claude and Gemini as the integrations go live.</p>
+        <ul>
+          <li>Provider-aware export architecture</li>
+          <li>Consistent archive formats</li>
+          <li>Local browser execution</li>
+        </ul>
+      </li>
+      <li class="feature-card">
+        <span class="feature-tag">Bulk</span>
+        <h3>Turn hundreds of chats into a ZIP.</h3>
+        <p>Select conversations, filter by project, or export everything at once without copying threads by hand.</p>
+        <ul>
+          <li>Select-many and select-all export</li>
+          <li>Project-scoped conversation lists</li>
+          <li>Progress feedback while exporting</li>
+        </ul>
+      </li>
+      <li class="feature-card">
+        <span class="feature-tag">Formats</span>
+        <h3>Choose the file your workflow needs.</h3>
+        <p>Write, analyze, publish, or preserve the same conversation in portable formats that remain useful outside the chat app.</p>
+        <ul>
+          <li>Markdown with metadata</li>
+          <li>Self-contained HTML</li>
+          <li>JSON, PNG, and plain text</li>
+        </ul>
+      </li>
+    </ul>
+  </section>
+
+  <div class="formats-band" id="formats">
+    <section aria-labelledby="formats-title">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Export formats</p>
+          <h2 id="formats-title">Portable files, not another silo.</h2>
+        </div>
+        <p class="section-copy">Every export is produced in your browser from your existing session. Files download locally and stay under your control.</p>
+      </div>
+      <ul class="format-list">
+        <li><strong>.md</strong><span>Readable Markdown with front matter and LaTeX preservation.</span></li>
+        <li><strong>.html</strong><span>Self-contained pages with light and dark styling support.</span></li>
+        <li><strong>.json</strong><span>Raw conversation data for analysis, pipelines, and backups.</span></li>
+        <li><strong>.png</strong><span>Full-thread screenshots for sharing visual records.</span></li>
+        <li><strong>.txt</strong><span>Clean plain text copied directly to the clipboard.</span></li>
+      </ul>
+    </section>
   </div>
 
-  <div class="note">
-    <strong>Prerequisite:</strong> a userscript manager such as
-    <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener">Tampermonkey</a> or
-    <a href="https://violentmonkey.github.io/" target="_blank" rel="noopener">Violentmonkey</a>.
-    With one installed, clicking <em>Install userscript</em> opens the install prompt automatically.
-  </div>
+  <section id="pricing" aria-labelledby="pricing-title">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">Pricing</p>
+        <h2 id="pricing-title">Free for everyday exports. Pro for batch work.</h2>
+      </div>
+      <p class="section-copy">Free covers the normal single-conversation workflow. Pro is a one-time license for heavier export jobs.</p>
+    </div>
+    <div class="pricing">
+      <article class="plan" aria-labelledby="free-title">
+        <h3 id="free-title">Free</h3>
+        <div class="price">$0 <small>forever</small></div>
+        <p>For saving individual conversations and keeping your own local archive.</p>
+        <ul>
+          <li>Single-conversation export</li>
+          <li>Markdown, HTML, JSON, PNG, and text</li>
+          <li>Metadata, timestamps, and filename templates</li>
+          <li>OpenAI export file import and re-export</li>
+          <li>Local-only files with no account required</li>
+        </ul>
+        <a class="button button-light" href="./chatgpt.user.js">Install Free</a>
+      </article>
+      <article class="plan plan-pro" aria-labelledby="pro-title">
+        <span class="plan-badge">Best for archives</span>
+        <h3 id="pro-title">Pro</h3>
+        <div class="price">$19 <small>one-time</small></div>
+        <p>For users who export at scale or work across multiple AI providers.</p>
+        <ul>
+          <li>Everything in Free</li>
+          <li>Bulk export selected or all conversations</li>
+          <li>ZIP archives for Markdown, HTML, and JSON</li>
+          <li>Multi-provider export workflows</li>
+          <li>Priority support for export-heavy use cases</li>
+        </ul>
+        <a class="button button-primary button-arrow" href="https://aichatexporter.com/pro">Buy Pro via Lemon Squeezy</a>
+      </article>
+    </div>
+  </section>
 
-  <ol class="steps">
-    <li><b>Install a userscript manager</b> — Tampermonkey (Chrome/Edge/Firefox/Safari) or Violentmonkey.</li>
-    <li><b>Click “Install userscript”</b> above — your manager intercepts the <code>.user.js</code> file and shows an install dialog.</li>
-    <li><b>Open ChatGPT</b> at <code>chatgpt.com</code> — the export toolbar appears in the sidebar.</li>
-  </ol>
-
-  <div class="grid">
-    <div class="card"><h3>📝 Markdown</h3><p>YAML front-matter &amp; LaTeX preserved.</p></div>
-    <div class="card"><h3>🌐 HTML</h3><p>Self-contained, dark/light, KaTeX.</p></div>
-    <div class="card"><h3>💾 JSON</h3><p>OpenAI-schema, TavernAI, Ooba.</p></div>
-    <div class="card"><h3>📸 PNG</h3><p>Full-thread screenshot.</p></div>
-    <div class="card"><h3>📦 Bulk ZIP</h3><p>Export all/selected at once.</p></div>
-    <div class="card"><h3>🌍 i18n</h3><p>9 languages built in.</p></div>
-  </div>
-
-  <footer>
-    Open source (MIT). Source &amp; docs on
-    <a href="https://github.com/a-organvm/a-i-chat--exporter" target="_blank" rel="noopener">GitHub</a>.
-    No accounts, no cloud, no tracking.
-  </footer>
+  <section aria-labelledby="privacy-title">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">Local by design</p>
+        <h2 id="privacy-title">Your conversations stay on your machine.</h2>
+      </div>
+      <p class="section-copy">ChatGPT Exporter is a userscript. It runs inside the browser, uses your existing chat session, and downloads files directly.</p>
+    </div>
+    <div class="privacy">
+      <article class="privacy-card">
+        <h3>No cloud processing</h3>
+        <p>Exports are generated locally. The landing page does not add a backend, upload conversations, or ask visitors to create an account.</p>
+      </article>
+      <article class="privacy-card">
+        <h3>Open source</h3>
+        <p>The code is MIT licensed and available in the repository for review, self-hosting, and contribution.</p>
+      </article>
+    </div>
+  </section>
 </main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>Open source under MIT. Source on <a href="https://github.com/a-organvm/a-i-chat--exporter" target="_blank" rel="noopener">GitHub</a>.</p>
+    <p class="version">v__VERSION__ - built __BUILT_AT__</p>
+  </div>
+</footer>
 </body>
 </html>
