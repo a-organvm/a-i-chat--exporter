@@ -151,8 +151,8 @@ export async function verifySignedLicense(
         const ok = await subtle.verify(
             { name: 'ECDSA', hash: 'SHA-256' },
             publicKey,
-            decoded.signature,
-            decoded.signedData,
+            decoded.signature as BufferSource,
+            decoded.signedData as BufferSource,
         )
         if (!ok) return freeStatus('bad-signature')
 

@@ -11,7 +11,7 @@ export interface MenuItemProps {
     disabled?: boolean
     title?: string
     className?: string
-    onClick?: (() => boolean) | (() => Promise<boolean>)
+    onClick?: () => boolean | Promise<boolean>
 }
 
 export const MenuItem: FC<MenuItemProps> = ({ text, successText, disabled = false, title, icon: Icon, onClick, className }) => {
@@ -52,7 +52,7 @@ export const MenuItem: FC<MenuItemProps> = ({ text, successText, disabled = fals
             border border-menu ${className}`}
             onClick={handleClick}
             onTouchStart={handleClick}
-            disabled={disabled}
+            data-disabled={disabled || undefined}
             title={title}
         >
             {loading

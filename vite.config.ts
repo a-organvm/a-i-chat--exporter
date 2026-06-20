@@ -7,6 +7,7 @@ import packageJson from './package.json'
 export default defineConfig({
     // https://github.com/lisonge/vite-plugin-monkey/issues/10#issuecomment-1207264978
     esbuild: {
+        // @ts-expect-error charset is a valid esbuild option not surfaced in vite's types
         charset: 'utf8',
     },
     plugins: [
@@ -73,16 +74,14 @@ export default defineConfig({
                     ['jszip', cdn.jsdelivr('JSZip', 'dist/jszip.min.js')],
                     ['html2canvas', cdn.jsdelivr('html2canvas', 'dist/html2canvas.min.js')],
                 ],
-                cssSideEffects() {
-                    return (e) => {
-                        const o = document.createElement('style')
-                        o.textContent = e
+                cssSideEffects: (e) => {
+                    const o = document.createElement('style')
+                    o.textContent = e
+                    document.head.append(o)
+                    setInterval(() => {
+                        if (o.isConnected) return
                         document.head.append(o)
-                        setInterval(() => {
-                            if (o.isConnected) return
-                            document.head.append(o)
-                        }, 300)
-                    }
+                    }, 300)
                 },
             },
             server: {

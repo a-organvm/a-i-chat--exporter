@@ -9,11 +9,11 @@
     cursor: pointer;
 }
 
-.CheckBoxLabel[disabled] {
+.CheckBoxLabel[data-disabled] {
     opacity: 0.7;
 }
 
-.CheckBoxLabel[disabled] * {
+.CheckBoxLabel[data-disabled] * {
     cursor: not-allowed;
 }
 

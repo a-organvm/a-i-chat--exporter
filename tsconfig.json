@@ -6,8 +6,11 @@
     "lib": ["ESNext", "DOM"],
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "resolveJsonModule": true,
+    "paths": {
+      "urlcat": ["./node_modules/urlcat/dist/index"]
+    },
     "types": ["vite/client"],
     "strict": true,
     "strictNullChecks": true,
