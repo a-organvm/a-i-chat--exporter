@@ -52,7 +52,7 @@ html {
     height: 46px;
 }
 
-.menu-item[disabled] {
+.menu-item[data-disabled] {
     filter: brightness(0.5);
 }
 

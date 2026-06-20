@@ -31,7 +31,6 @@ export const SettingDialog: FC<SettingDialogProps> = ({
     children,
 }) => {
     const {
-        /* eslint-disable pionxzh/consistent-list-newline */
         format, setFormat,
         enableTimestamp, setEnableTimestamp,
         timeStamp24H, setTimeStamp24H,
@@ -42,7 +41,6 @@ export const SettingDialog: FC<SettingDialogProps> = ({
         exportAllLimit, setExportAllLimit,
         licenseKey, setLicenseKey,
         hasProLicense, licenseVerifying,
-        /* eslint-enable pionxzh/consistent-list-newline */
     } = useSettingContext()
     const { t, i18n } = useTranslation()
     const _title = useTitle()
@@ -207,7 +205,7 @@ export const SettingDialog: FC<SettingDialogProps> = ({
                                         id="proLicenseKey"
                                         type="password"
                                         autoComplete="off"
-                                        spellCheck={false}
+                                        spellcheck={false}
                                         value={licenseKey}
                                         placeholder={t('License Key Placeholder')}
                                         onChange={e => setLicenseKey(e.currentTarget.value)}
@@ -277,7 +275,7 @@ export const SettingDialog: FC<SettingDialogProps> = ({
                                             className="Input min-w-0 flex-1"
                                             type="password"
                                             autoComplete="off"
-                                            spellCheck={false}
+                                            spellcheck={false}
                                             value={apiKeyInput}
                                             placeholder={t('API Key Placeholder')}
                                             onChange={e => setApiKeyInput(e.currentTarget.value)}
@@ -370,7 +368,6 @@ export const SettingDialog: FC<SettingDialogProps> = ({
                                                 ,{' '}
                                                 <Variable name="{update_time}" title="2023-04-10T21:45:35.027Z" />
                                             </p>
-                                            {/* eslint-disable-next-line pionxzh/consistent-list-newline */}
                                             {exportMetaList.map((meta, i) => (
                                                 <div className="flex items-center mt-2" key={i}>
                                                     <input

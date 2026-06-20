@@ -7,6 +7,9 @@ import packageJson from './package.json'
 export default defineConfig({
     // https://github.com/lisonge/vite-plugin-monkey/issues/10#issuecomment-1207264978
     esbuild: {
+        // esbuild honors `charset` (keeps non-ASCII literal instead of \u-escaping, which
+        // matters for the i18n locales); vite's ESBuildOptions type omits it, so assert it.
+        // @ts-expect-error charset is a valid esbuild option not surfaced in vite's types
         charset: 'utf8',
     },
     plugins: [

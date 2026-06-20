@@ -151,8 +151,10 @@ export async function verifySignedLicense(
         const ok = await subtle.verify(
             { name: 'ECDSA', hash: 'SHA-256' },
             publicKey,
-            decoded.signature,
-            decoded.signedData,
+            // BufferSource now requires an ArrayBuffer-backed view under the bumped TS lib;
+            // these Uint8Arrays are ArrayBuffer-backed at runtime, so the cast is safe.
+            decoded.signature as BufferSource,
+            decoded.signedData as BufferSource,
         )
         if (!ok) return freeStatus('bad-signature')
 
