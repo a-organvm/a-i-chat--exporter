@@ -159,7 +159,9 @@ function getNavigatorLanguage() {
 }
 
 function getOaiLanguage() {
-    const storedLanguage = window?.localStorage?.getItem(KEY_OAI_LOCALE)
+    const storedLanguage = typeof window !== 'undefined'
+        ? window.localStorage?.getItem(KEY_OAI_LOCALE)
+        : null
     return storedLanguage?.replace(/^"(.*)"$/, '$1') ?? null
 }
 

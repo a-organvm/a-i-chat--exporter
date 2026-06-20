@@ -73,16 +73,14 @@ export default defineConfig({
                     ['jszip', cdn.jsdelivr('JSZip', 'dist/jszip.min.js')],
                     ['html2canvas', cdn.jsdelivr('html2canvas', 'dist/html2canvas.min.js')],
                 ],
-                cssSideEffects() {
-                    return (e) => {
-                        const o = document.createElement('style')
-                        o.textContent = e
+                cssSideEffects: (e) => {
+                    const o = document.createElement('style')
+                    o.textContent = e
+                    document.head.append(o)
+                    setInterval(() => {
+                        if (o.isConnected) return
                         document.head.append(o)
-                        setInterval(() => {
-                            if (o.isConnected) return
-                            document.head.append(o)
-                        }, 300)
-                    }
+                    }, 300)
                 },
             },
             server: {

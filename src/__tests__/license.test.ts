@@ -191,11 +191,24 @@ describe('validateWithLemonSqueezy (online)', () => {
         expect(status.payload?.sub).toBe('a@b.com')
     })
 
-    it('fails closed for an inactive/invalid license', async () => {
+    it('fails closed for an expired/revoked license', async () => {
         const fetchImpl = okResponse({ valid: false, license_key: { status: 'expired' } })
         const status = await validateWithLemonSqueezy('BAD-KEY', { fetchImpl })
         expect(status.valid).toBe(false)
-        expect(status.reason).toBe('inactive')
+        expect(status.reason).toBe('expired')
+    })
+
+    it('unlocks pro for a paid but not-yet-activated (inactive) license', async () => {
+        // Lemon Squeezy returns valid:true with status 'inactive' for a freshly
+        // purchased key that has no activations yet — it is still a paid key.
+        const fetchImpl = okResponse({
+            valid: true,
+            license_key: { status: 'inactive' },
+            meta: { customer_email: 'new@buyer.com' },
+        })
+        const status = await validateWithLemonSqueezy('FRESH-KEY', { fetchImpl })
+        expect(status.valid).toBe(true)
+        expect(status.tier).toBe('pro')
     })
 
     it('fails closed on a non-2xx response', async () => {

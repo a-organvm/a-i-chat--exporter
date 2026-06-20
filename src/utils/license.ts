@@ -206,8 +206,13 @@ export async function validateWithLemonSqueezy(
         if (!res.ok) return freeStatus(`http-${res.status}`)
 
         const data = await res.json() as LemonSqueezyResponse
-        if (!data || data.valid !== true || data.license_key?.status !== 'active') {
-            return freeStatus('inactive')
+        // Lemon Squeezy returns valid:true for a paid key whether or not it has
+        // been activated yet. A freshly purchased key is status 'inactive' (no
+        // activations) but is still a legitimate paid key, so unlock on valid:true
+        // and only reject keys LS has explicitly revoked or expired.
+        const status = data?.license_key?.status
+        if (!data || data.valid !== true || status === 'expired' || status === 'disabled') {
+            return freeStatus(status ?? 'inactive')
         }
 
         return {
