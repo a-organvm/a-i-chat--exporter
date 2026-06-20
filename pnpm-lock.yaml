@@ -89,8 +89,8 @@ devDependencies:
     specifier: ^2.10.5
     version: 2.10.5(@babel/core@7.29.7)(preact@10.29.2)(vite@8.0.16)
   '@types/katex':
-    specifier: ^0.16.7
-    version: 0.16.7
+    specifier: ^0.16.8
+    version: 0.16.8
   '@types/mdast':
     specifier: ^4.0.4
     version: 4.0.4
@@ -1848,8 +1848,8 @@ packages:
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
     dev: true
 
-  /@types/katex@0.16.7:
-    resolution: {integrity: sha512-HMwFiRujE5PjrgwHQ25+bsLJgowjGjm5Z8FVSf0N6PwgJrwxH0QxzHYDcKsTfV3wva0vzrpqMTJS2jXPr5BMEQ==}
+  /@types/katex@0.16.8:
+    resolution: {integrity: sha512-trgaNyfU+Xh2Tc+ABIb44a5AYUpicB3uwirOioeOkNPPbmgRNtcWyDeeFRzjPZENO9Vq8gvVqfhaaXWLlevVwg==}
     dev: true
 
   /@types/mdast@3.0.15:
