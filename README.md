@@ -109,9 +109,9 @@ The two Pro capabilities map directly to the feature flags in the codebase (`PRO
 
 ### Plan and Status
 
-Pro is planned as a **$19 one-time license** (not a subscription) sold through a [hosted checkout](https://aichatexporter.com/pro). After purchase you paste your license key into the settings panel; it is stored locally via Tampermonkey storage and unlocks the Pro features in place.
+Pro is planned as a **$19 one-time license** (not a subscription) sold through a [hosted checkout](https://aichatexporter.com/pro). After purchase, the hosted checkout can return the license key to ChatGPT Exporter automatically; you can also paste the key into the settings panel. The key is stored locally via Tampermonkey storage and unlocks Pro features in place after verification.
 
-> **Status — in development.** The license gate currently ships as a local scaffold: `checkLicenseGate()` accepts any non-empty license key. Server-side validation (via Lemon Squeezy) and live Claude/Gemini extraction are the remaining work before Pro is generally available. Multi-provider support is foundation-only today — see [Architecture: providers](#architecture-providers). Until Pro ships, all features described above remain accessible.
+> **Status — first revenue slice implemented.** The Pro gate now fails closed against signed-key or Lemon Squeezy validation, captures checkout-return license keys, scrubs license material from the URL, and gates bulk / multi-provider export through `PRO_FEATURES`. A production checkout URL still needs to be configured at build time, and live Claude/Gemini extraction remains foundation-only — see [Architecture: providers](#architecture-providers).
 
 ### Supporting the Project
 

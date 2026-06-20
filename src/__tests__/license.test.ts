@@ -4,6 +4,7 @@ import {
     PRO_FEATURE_MULTI_PROVIDER,
     buildCheckoutReturnUrl,
     buildProCheckoutUrl,
+    captureLicenseFromUrl,
     cleanLicenseReturnUrl,
     decodeLicenseKey,
     getLicenseFromUrl,
@@ -278,6 +279,42 @@ describe('license checkout helpers', () => {
         expect(url.searchParams.has('ce_license_key')).toBe(false)
         expect(url.searchParams.has('ce_checkout_return')).toBe(false)
         expect(url.hash).toBe('#view=done')
+    })
+
+    it('persists a returned license key and scrubs the source URL', () => {
+        const captured: string[] = []
+        let scrubbed = false
+        const license = captureLicenseFromUrl(
+            value => captured.push(value),
+            'https://chatgpt.com/?ce_license_key=license-123&ce_checkout_return=1',
+            () => { scrubbed = true },
+        )
+
+        expect(license).toBe('license-123')
+        expect(captured).toEqual(['license-123'])
+        expect(scrubbed).toBe(true)
+    })
+
+    it('does not persist or scrub when a return URL has no license key', () => {
+        const captured: string[] = []
+        let scrubbed = false
+        const license = captureLicenseFromUrl(
+            value => captured.push(value),
+            'https://chatgpt.com/?ce_checkout_return=1',
+            () => { scrubbed = true },
+        )
+
+        expect(license).toBeNull()
+        expect(captured).toEqual([])
+        expect(scrubbed).toBe(false)
+    })
+
+    it('does nothing without an input URL outside the browser', () => {
+        const captured: string[] = []
+        const license = captureLicenseFromUrl(value => captured.push(value))
+
+        expect(license).toBeNull()
+        expect(captured).toEqual([])
     })
 
     it('adds non-secret return metadata to the hosted checkout URL', () => {

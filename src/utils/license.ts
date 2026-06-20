@@ -349,6 +349,32 @@ export function scrubLicenseReturnUrl() {
     }
 }
 
+/**
+ * Persist a license key carried by a checkout return URL, then scrub the URL so
+ * the key is not left in browser history. Returns the captured key, if present.
+ */
+export function captureLicenseFromUrl(
+    persistLicense: (licenseKey: string) => void,
+    input?: string | URL | Location,
+    scrub?: (() => void) | null,
+) {
+    const source = input ?? (typeof window !== 'undefined' ? window.location : null)
+    if (!source) return null
+
+    const license = getLicenseFromUrl(source)
+    if (!license) return null
+
+    let scrubReturnUrl = scrub ?? null
+    if (scrub === undefined && typeof window !== 'undefined' && source === window.location) {
+        scrubReturnUrl = scrubLicenseReturnUrl
+    }
+
+    persistLicense(license)
+    scrubReturnUrl?.()
+
+    return license
+}
+
 export function buildCheckoutReturnUrl(input: string | URL | Location = window.location) {
     const url = new URL(cleanLicenseReturnUrl(input))
     url.searchParams.set(CHECKOUT_RETURN_PARAM, '1')
