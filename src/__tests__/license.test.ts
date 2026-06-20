@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
     PRO_FEATURE_BULK_EXPORT,
     PRO_FEATURE_MULTI_PROVIDER,
+    activateWithLemonSqueezy,
     buildCheckoutReturnUrl,
     buildProCheckoutUrl,
     cleanLicenseReturnUrl,
@@ -183,19 +184,45 @@ describe('validateWithLemonSqueezy (online)', () => {
         const fetchImpl = okResponse({
             valid: true,
             license_key: { status: 'active' },
+            instance: { id: 'instance-1' },
             meta: { customer_email: 'a@b.com' },
         })
         const status = await validateWithLemonSqueezy('REAL-KEY', { fetchImpl })
         expect(status.valid).toBe(true)
         expect(status.tier).toBe('pro')
+        expect(status.instanceId).toBe('instance-1')
         expect(status.payload?.sub).toBe('a@b.com')
+    })
+
+    it('sends a stored instance id when validating an activated license', async () => {
+        let body = ''
+        const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+            body = init?.body?.toString() ?? ''
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    valid: true,
+                    license_key: { status: 'active' },
+                    instance: { id: 'instance-1' },
+                }),
+            }
+        }) as unknown as typeof fetch
+
+        const status = await validateWithLemonSqueezy('REAL-KEY', {
+            fetchImpl,
+            instanceId: 'instance-1',
+        })
+
+        expect(status.valid).toBe(true)
+        expect(new URLSearchParams(body).get('instance_id')).toBe('instance-1')
     })
 
     it('fails closed for an inactive/invalid license', async () => {
         const fetchImpl = okResponse({ valid: false, license_key: { status: 'expired' } })
         const status = await validateWithLemonSqueezy('BAD-KEY', { fetchImpl })
         expect(status.valid).toBe(false)
-        expect(status.reason).toBe('inactive')
+        expect(status.reason).toBe('expired')
     })
 
     it('fails closed on a non-2xx response', async () => {
@@ -218,6 +245,53 @@ describe('validateWithLemonSqueezy (online)', () => {
         const status = await validateWithLemonSqueezy('', { fetchImpl })
         expect(status.valid).toBe(false)
         expect(called).toBe(false)
+    })
+})
+
+describe('activateWithLemonSqueezy (online)', () => {
+    it('activates a license and returns the created instance id', async () => {
+        let body = ''
+        const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+            body = init?.body?.toString() ?? ''
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    activated: true,
+                    license_key: { status: 'active' },
+                    instance: { id: 'instance-1' },
+                    meta: { customer_email: 'a@b.com' },
+                }),
+            }
+        }) as unknown as typeof fetch
+
+        const status = await activateWithLemonSqueezy('REAL-KEY', {
+            fetchImpl,
+            instanceName: 'Test Browser',
+        })
+        const params = new URLSearchParams(body)
+
+        expect(status.valid).toBe(true)
+        expect(status.instanceId).toBe('instance-1')
+        expect(status.payload?.sub).toBe('a@b.com')
+        expect(params.get('license_key')).toBe('REAL-KEY')
+        expect(params.get('instance_name')).toBe('Test Browser')
+    })
+
+    it('fails closed when activation is rejected', async () => {
+        const fetchImpl = (async () => ({
+            ok: true,
+            status: 200,
+            json: async () => ({
+                activated: false,
+                error: 'This license key has reached the activation limit.',
+                license_key: { status: 'active' },
+            }),
+        })) as unknown as typeof fetch
+
+        const status = await activateWithLemonSqueezy('REAL-KEY', { fetchImpl })
+        expect(status.valid).toBe(false)
+        expect(status.reason).toBe('This license key has reached the activation limit.')
     })
 })
 
@@ -249,6 +323,54 @@ describe('verifyLicense (orchestration)', () => {
         const status = await verifyLicense('LEMON-KEY', { online: true, fetchImpl })
         expect(status.valid).toBe(true)
         expect(status.tier).toBe('pro')
+    })
+
+    it('validates a stored Lemon Squeezy instance before falling back to the raw license', async () => {
+        const bodies: string[] = []
+        const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+            bodies.push(init?.body?.toString() ?? '')
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    valid: true,
+                    license_key: { status: 'active' },
+                    instance: { id: 'instance-1' },
+                }),
+            }
+        }) as unknown as typeof fetch
+
+        const status = await verifyLicense('LEMON-KEY', {
+            online: true,
+            fetchImpl,
+            instanceId: 'instance-1',
+        })
+
+        expect(status.valid).toBe(true)
+        expect(status.instanceId).toBe('instance-1')
+        expect(bodies).toHaveLength(1)
+        expect(new URLSearchParams(bodies[0]).get('instance_id')).toBe('instance-1')
+    })
+
+    it('activates an inactive Lemon Squeezy license and returns the instance id', async () => {
+        const responses = [
+            { valid: true, license_key: { status: 'inactive' } },
+            { activated: true, license_key: { status: 'active' }, instance: { id: 'instance-1' } },
+        ]
+        const fetchImpl = (async () => ({
+            ok: true,
+            status: 200,
+            json: async () => responses.shift(),
+        })) as unknown as typeof fetch
+
+        const status = await verifyLicense('LEMON-KEY', {
+            online: true,
+            fetchImpl,
+            instanceName: 'Test Browser',
+        })
+
+        expect(status.valid).toBe(true)
+        expect(status.instanceId).toBe('instance-1')
     })
 
     it('stays on free tier when offline fails and online is disabled', async () => {

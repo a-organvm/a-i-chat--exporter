@@ -1,3 +1,5 @@
+import { GM_xmlhttpRequest } from 'vite-plugin-monkey/dist/client'
+
 /**
  * License-key verification and Pro checkout for the Pro gate.
  *
@@ -6,10 +8,11 @@
  *      SHA-256) signature produced by the vendor's private key. We verify it
  *      against an embedded public key. Works without network access.
  *   2. Online Lemon Squeezy validation — POSTs the key to the Lemon Squeezy
- *      license API and trusts the `active` status.
+ *      license API, activates inactive keys once, and trusts the `active`
+ *      status for verified keys/instances.
  *
  * Both paths **fail closed**: any malformed key, bad signature, expired licence,
- * network error, or unexpected response downgrades the user to the free tier.
+ * network error, activation rejection, or unexpected response downgrades the user to the free tier.
  * Pro features must therefore gate on {@link isProUnlocked} / {@link hasFeature},
  * never on the mere presence of a stored key.
  *
@@ -46,6 +49,8 @@ export interface LicenseStatus {
     tier: LicenseTier
     /** Concrete features unlocked by this licence. */
     features: string[]
+    /** Lemon Squeezy instance id activated for this browser, when available. */
+    instanceId?: string
     /** Machine-readable reason, useful when `valid` is false. */
     reason?: string
     payload?: LicensePayload
@@ -66,6 +71,7 @@ function freeStatus(reason: string, payload?: LicensePayload): LicenseStatus {
 export const EXPORTER_PUBLIC_KEY_JWK: JsonWebKey | null = null
 
 const LEMON_SQUEEZY_VALIDATE_URL = 'https://api.lemonsqueezy.com/v1/licenses/validate'
+const LEMON_SQUEEZY_ACTIVATE_URL = 'https://api.lemonsqueezy.com/v1/licenses/activate'
 
 function base64UrlToBytes(input: string): Uint8Array {
     const normalized = input.replace(/-/g, '+').replace(/_/g, '/')
@@ -172,10 +178,90 @@ export async function verifySignedLicense(
     }
 }
 
+interface LemonSqueezyLicenseKey {
+    status?: string
+}
+
+interface LemonSqueezyInstance {
+    id?: string
+}
+
 interface LemonSqueezyResponse {
     valid?: boolean
-    license_key?: { status?: string }
+    activated?: boolean
+    error?: string | null
+    license_key?: LemonSqueezyLicenseKey
+    instance?: LemonSqueezyInstance | null
     meta?: { customer_email?: string }
+}
+
+function serializeBody(body: BodyInit | null | undefined) {
+    if (typeof body === 'string') return body
+    if (body instanceof URLSearchParams) return body.toString()
+    return undefined
+}
+
+function createGmFetch(): typeof fetch | undefined {
+    if (typeof GM_xmlhttpRequest !== 'function') return undefined
+
+    return ((input: RequestInfo | URL, init: RequestInit = {}) => {
+        return new Promise<Response>((resolve, reject) => {
+            const headers = new Headers(init.headers)
+            const headerRecord: Record<string, string> = {}
+            headers.forEach((value, key) => {
+                headerRecord[key] = value
+            })
+
+            GM_xmlhttpRequest({
+                method: init.method ?? 'GET',
+                url: input.toString(),
+                headers: headerRecord,
+                data: serializeBody(init.body),
+                timeout: 15_000,
+                onload: (response) => {
+                    resolve(new Response(response.responseText ?? '', {
+                        status: response.status,
+                        statusText: response.statusText,
+                    }))
+                },
+                onerror: () => reject(new Error('gm-request-error')),
+                ontimeout: () => reject(new Error('gm-request-timeout')),
+            })
+        })
+    }) as typeof fetch
+}
+
+function getLicenseFetch(fetchImpl?: typeof fetch) {
+    if (fetchImpl) return fetchImpl
+
+    const gmFetch = createGmFetch()
+    if (gmFetch) return gmFetch
+
+    return typeof fetch !== 'undefined' ? fetch : undefined
+}
+
+function lemonSqueezyStatusReason(data: LemonSqueezyResponse, preferError = false) {
+    if (preferError && data.error) return data.error
+
+    const status = data.license_key?.status
+    if (status) return status
+    if (data.error) return data.error
+    return 'inactive'
+}
+
+function lemonSqueezyProStatus(data: LemonSqueezyResponse): LicenseStatus {
+    return {
+        valid: true,
+        tier: 'pro',
+        features: [...PRO_FEATURES],
+        instanceId: data.instance?.id,
+        payload: { tier: 'pro', sub: data.meta?.customer_email },
+    }
+}
+
+export function defaultLicenseInstanceName() {
+    const host = typeof location !== 'undefined' ? location.hostname : ''
+    return host ? `ChatGPT Exporter on ${host}` : 'ChatGPT Exporter'
 }
 
 /**
@@ -188,7 +274,7 @@ export async function validateWithLemonSqueezy(
 ): Promise<LicenseStatus> {
     if (!key || typeof key !== 'string' || !key.trim()) return freeStatus('empty')
 
-    const doFetch = opts.fetchImpl ?? (typeof fetch !== 'undefined' ? fetch : undefined)
+    const doFetch = getLicenseFetch(opts.fetchImpl)
     if (!doFetch) return freeStatus('fetch-unavailable')
 
     try {
@@ -206,16 +292,54 @@ export async function validateWithLemonSqueezy(
         if (!res.ok) return freeStatus(`http-${res.status}`)
 
         const data = await res.json() as LemonSqueezyResponse
-        if (!data || data.valid !== true || data.license_key?.status !== 'active') {
-            return freeStatus('inactive')
+        if (!data) return freeStatus('inactive')
+        if (data.valid !== true || data.license_key?.status !== 'active') {
+            return freeStatus(lemonSqueezyStatusReason(data))
         }
 
-        return {
-            valid: true,
-            tier: 'pro',
-            features: [...PRO_FEATURES],
-            payload: { tier: 'pro', sub: data.meta?.customer_email },
+        return lemonSqueezyProStatus(data)
+    }
+    catch {
+        return freeStatus('network-error')
+    }
+}
+
+/**
+ * Activate an inactive Lemon Squeezy license for this browser and return the
+ * created instance id so future checks can validate that exact activation.
+ */
+export async function activateWithLemonSqueezy(
+    key: string,
+    opts: { fetchImpl?: typeof fetch, url?: string, instanceName?: string } = {},
+): Promise<LicenseStatus> {
+    if (!key || typeof key !== 'string' || !key.trim()) return freeStatus('empty')
+
+    const doFetch = getLicenseFetch(opts.fetchImpl)
+    if (!doFetch) return freeStatus('fetch-unavailable')
+
+    try {
+        const body = new URLSearchParams({
+            license_key: key.trim(),
+            instance_name: opts.instanceName ?? defaultLicenseInstanceName(),
+        })
+
+        const res = await doFetch(opts.url ?? LEMON_SQUEEZY_ACTIVATE_URL, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: body.toString(),
+        })
+        if (!res.ok) return freeStatus(`http-${res.status}`)
+
+        const data = await res.json() as LemonSqueezyResponse
+        if (!data) return freeStatus('inactive')
+        if (data.activated !== true || data.license_key?.status !== 'active' || !data.instance?.id) {
+            return freeStatus(lemonSqueezyStatusReason(data, true))
         }
+
+        return lemonSqueezyProStatus(data)
     }
     catch {
         return freeStatus('network-error')
@@ -225,7 +349,8 @@ export async function validateWithLemonSqueezy(
 /**
  * Verify a stored licence key. Tries the offline signed-key check first (so a
  * valid signed key works without network), then falls back to Lemon Squeezy when
- * `online` is enabled. Always fails closed to the free tier.
+ * `online` is enabled. Lemon validation checks a stored instance first, then the
+ * raw key, then activates inactive keys once. Always fails closed to the free tier.
  */
 export async function verifyLicense(
     key: string | null | undefined,
@@ -234,6 +359,9 @@ export async function verifyLicense(
         now?: number
         online?: boolean
         fetchImpl?: typeof fetch
+        instanceId?: string
+        instanceName?: string
+        activate?: boolean
     } = {},
 ): Promise<LicenseStatus> {
     if (!key || typeof key !== 'string' || !key.trim()) return freeStatus('empty')
@@ -242,7 +370,26 @@ export async function verifyLicense(
     if (signed.valid) return signed
 
     if (opts.online) {
-        return validateWithLemonSqueezy(key, { fetchImpl: opts.fetchImpl })
+        if (opts.instanceId) {
+            const validatedInstance = await validateWithLemonSqueezy(key, {
+                fetchImpl: opts.fetchImpl,
+                instanceId: opts.instanceId,
+            })
+            if (validatedInstance.valid) return validatedInstance
+        }
+
+        const validatedLicense = await validateWithLemonSqueezy(key, { fetchImpl: opts.fetchImpl })
+        if (validatedLicense.valid) return validatedLicense
+
+        if (opts.activate !== false && validatedLicense.reason === 'inactive') {
+            const activated = await activateWithLemonSqueezy(key, {
+                fetchImpl: opts.fetchImpl,
+                instanceName: opts.instanceName,
+            })
+            if (activated.valid) return activated
+        }
+
+        return validatedLicense
     }
     return signed
 }

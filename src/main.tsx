@@ -2,6 +2,7 @@ import { render } from 'preact'
 import sentinel from 'sentinel-js'
 import { fetchConversation, processConversation } from './api'
 import { isExporterAuthError } from './auth'
+import { captureLicenseReturnFromUrl } from './billing'
 import { getChatIdFromUrl, isSharePage } from './page'
 import { Menu } from './ui/Menu'
 import { logger } from './utils/logger'
@@ -14,6 +15,8 @@ main()
 
 function main() {
     onloadSafe(() => {
+        captureLicenseReturnFromUrl()
+
         const styleEl = document.createElement('style')
         styleEl.id = 'sentinel-css'
         document.head.append(styleEl)

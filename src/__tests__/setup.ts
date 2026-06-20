@@ -4,6 +4,7 @@ vi.mock('vite-plugin-monkey/dist/client', () => ({
   GM_deleteValue: undefined,
   GM_getValue: undefined,
   GM_setValue: undefined,
+  GM_xmlhttpRequest: undefined,
   unsafeWindow: undefined,
 }));
 

@@ -98,7 +98,7 @@ Pro is aimed at people for whom export is part of their job or research, and who
 | Single-conversation export (Markdown, HTML, JSON, PNG, Text) | ✅ | ✅ |
 | Timestamp injection and custom filename templates | ✅ | ✅ |
 | Metadata front matter | ✅ | ✅ |
-| Official `conversations.json` import and re-export | ✅ | ✅ |
+| Official `conversations.json` import and batch re-export | — | ✅ |
 | 9-language localized UI | ✅ | ✅ |
 | No account, no upload, local-only files | ✅ | ✅ |
 | **Bulk export** (select-many / select-all → ZIP archive) | — | ✅ |
@@ -109,9 +109,9 @@ The two Pro capabilities map directly to the feature flags in the codebase (`PRO
 
 ### Plan and Status
 
-Pro is planned as a **$19 one-time license** (not a subscription) sold through a [hosted checkout](https://aichatexporter.com/pro). After purchase you paste your license key into the settings panel; it is stored locally via Tampermonkey storage and unlocks the Pro features in place.
+Pro is planned as a **$19 one-time license** (not a subscription) sold through a hosted Lemon Squeezy checkout. At build time, set `VITE_LEMON_SQUEEZY_CHECKOUT_URL` to the Lemon Squeezy checkout URL. The settings panel opens that hosted checkout and tags the purchase with non-secret source/return metadata. To enable automatic capture after purchase, configure the Lemon Squeezy confirmation/product link URL to return to ChatGPT with a supported license parameter such as `ce_license_key=[license_key]`. Customers can also paste a license key manually.
 
-> **Status — in development.** The license gate currently ships as a local scaffold: `checkLicenseGate()` accepts any non-empty license key. Server-side validation (via Lemon Squeezy) and live Claude/Gemini extraction are the remaining work before Pro is generally available. Multi-provider support is foundation-only today — see [Architecture: providers](#architecture-providers). Until Pro ships, all features described above remain accessible.
+> **Status — billing gate wired.** Pro features are locked unless the stored key verifies as Pro. Verification first supports offline signed keys when a production public key is embedded, then falls back to Lemon Squeezy license validation/activation. Validation fails closed to the free tier on malformed keys, expired/disabled licenses, network errors, or unexpected API responses. Multi-provider support is foundation-only today — see [Architecture: providers](#architecture-providers).
 
 ### Supporting the Project
 
