@@ -4,4 +4,4 @@ organ: III
 display_name: Export and share AI chat conversation history (fork of chatgpt-exporter)
 delivery:
 - platform: web_app
-  status: shipped
+  status: not_started

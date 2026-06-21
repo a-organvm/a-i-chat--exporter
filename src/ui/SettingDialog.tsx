@@ -1,20 +1,16 @@
 import * as Dialog from '@radix-ui/react-dialog'
-import { useCallback, useEffect, useState } from 'preact/hooks'
 import { useTranslation } from 'react-i18next'
 import sanitize from 'sanitize-filename'
-import { authorizeApiKey, getExporterAuthStatus, issueApiKey, revokeApiKey } from '../auth'
 import { baseUrl } from '../constants'
 import { useTitle } from '../hooks/useTitle'
 import { LOCALES } from '../i18n'
 import { getChatIdFromUrl } from '../page'
 import { getFileNameWithFormat } from '../utils/download'
-import { LEMON_SQUEEZY_CHECKOUT_URL, openProCheckout } from '../utils/license'
 import { timestamp as _timestamp, dateStr, unixTimestampToISOString } from '../utils/utils'
 import { IconCross, IconTrash } from './Icons'
 import { useSettingContext } from './SettingContext'
 import { Toggle } from './Toggle'
 import type { FC } from '../type'
-import type { ExporterAuthStatus } from '../auth'
 
 function Variable({ name, title }: { name: string; title: string }) {
     return <strong className="cursor-help select-all whitespace-nowrap" title={title}>{name}</strong>
@@ -41,7 +37,7 @@ export const SettingDialog: FC<SettingDialogProps> = ({
         exportMetaList, setExportMetaList,
         exportAllLimit, setExportAllLimit,
         licenseKey, setLicenseKey,
-        hasProLicense, licenseVerifying,
+        hasProLicense,
         /* eslint-enable pionxzh/consistent-list-newline */
     } = useSettingContext()
     const { t, i18n } = useTranslation()
@@ -56,52 +52,6 @@ export const SettingDialog: FC<SettingDialogProps> = ({
     const preview = getFileNameWithFormat(format, '{ext}', { title, chatId, createTime, updateTime })
 
     const source = `${baseUrl}/${chatId}`
-    const [authStatus, setAuthStatus] = useState<ExporterAuthStatus | null>(null)
-    const [apiKeyInput, setApiKeyInput] = useState('')
-    const [issuedApiKey, setIssuedApiKey] = useState('')
-    const [authMessage, setAuthMessage] = useState('')
-
-    const refreshAuthStatus = useCallback(() => {
-        getExporterAuthStatus()
-            .then(setAuthStatus)
-            .catch(error => setAuthMessage(error instanceof Error ? error.message : String(error)))
-    }, [])
-
-    useEffect(() => {
-        if (open) refreshAuthStatus()
-    }, [open, refreshAuthStatus])
-
-    const authConfigured = authStatus?.configured ?? false
-    const authVerified = authStatus?.verified ?? false
-    const authStateLabel = authVerified
-        ? t('API Auth Unlocked')
-        : authConfigured
-            ? t('API Auth Locked')
-            : t('API Auth Not Issued')
-    const issuedAt = authStatus?.issuedAt ? new Date(authStatus.issuedAt).toLocaleString() : null
-
-    const onIssueApiKey = useCallback(async () => {
-        const issued = await issueApiKey()
-        setIssuedApiKey(issued.apiKey)
-        setApiKeyInput('')
-        setAuthMessage(t('API Key Issued'))
-        refreshAuthStatus()
-    }, [refreshAuthStatus, t])
-
-    const onUnlockApiKey = useCallback(async () => {
-        const verified = await authorizeApiKey(apiKeyInput)
-        setAuthMessage(verified ? t('API Key Verified') : t('Invalid API Key'))
-        if (verified) setApiKeyInput('')
-        refreshAuthStatus()
-    }, [apiKeyInput, refreshAuthStatus, t])
-
-    const onRevokeApiKey = useCallback(() => {
-        revokeApiKey()
-        setIssuedApiKey('')
-        setApiKeyInput('')
-        setAuthMessage(t('API Key Revoked'))
-        refreshAuthStatus()
-    }, [refreshAuthStatus, t])
 
     return (
         <Dialog.Root
@@ -213,94 +163,10 @@ export const SettingDialog: FC<SettingDialogProps> = ({
                                         onChange={e => setLicenseKey(e.currentTarget.value)}
                                     />
                                     <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                                        {licenseVerifying
-                                            ? t('License Verifying')
-                                            : hasProLicense
-                                                ? t('Pro License Active')
-                                                : licenseKey.trim()
-                                                    ? t('License Invalid')
-                                                    : t('Pro License Required Description')}
+                                        {hasProLicense
+                                            ? t('Pro License Active')
+                                            : t('Pro License Required Description')}
                                     </p>
-                                    {!hasProLicense && (
-                                        <button
-                                            type="button"
-                                            className="Button mt-3"
-                                            onClick={() => {
-                                                if (!openProCheckout()) alert(t('Checkout Not Configured'))
-                                            }}
-                                            disabled={!LEMON_SQUEEZY_CHECKOUT_URL}
-                                        >
-                                            {t('Buy Pro')}
-                                        </button>
-                                    )}
-                                </dd>
-                            </div>
-                        </div>
-                        <div className="relative flex bg-white dark:bg-white/5 rounded p-4">
-                            <div className="w-full">
-                                <dt className="text-md font-medium text-gray-800 dark:text-white">
-                                    {t('API Auth')}
-                                </dt>
-                                <dd className="text-sm text-gray-700 dark:text-gray-300">
-                                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                                        <span
-                                            className={`rounded px-2 py-1 text-xs font-medium ${
-                                                authVerified
-                                                    ? 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-100'
-                                                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-100'
-                                            }`}
-                                        >
-                                            {authStateLabel}
-                                        </span>
-                                        {issuedAt && (
-                                            <span>
-                                                {t('Issued')}: {issuedAt}
-                                            </span>
-                                        )}
-                                    </div>
-                                    {issuedApiKey && (
-                                        <div className="mt-3">
-                                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300" htmlFor="newApiKey">
-                                                {t('New API Key')}
-                                            </label>
-                                            <input
-                                                className="Input mt-1 font-mono"
-                                                id="newApiKey"
-                                                readOnly
-                                                value={issuedApiKey}
-                                                onFocus={e => e.currentTarget.select()}
-                                            />
-                                        </div>
-                                    )}
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                        <input
-                                            className="Input min-w-0 flex-1"
-                                            type="password"
-                                            autoComplete="off"
-                                            spellCheck={false}
-                                            value={apiKeyInput}
-                                            placeholder={t('API Key Placeholder')}
-                                            onChange={e => setApiKeyInput(e.currentTarget.value)}
-                                        />
-                                        <button
-                                            className="Button green"
-                                            disabled={!authConfigured || apiKeyInput.trim().length === 0}
-                                            onClick={onUnlockApiKey}
-                                        >
-                                            {t('Unlock')}
-                                        </button>
-                                    </div>
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                        <button className="Button green" onClick={onIssueApiKey}>
-                                            {t('Issue API Key')}
-                                        </button>
-                                        <button className="Button red" disabled={!authConfigured} onClick={onRevokeApiKey}>
-                                            {t('Revoke')}
-                                        </button>
-                                    </div>
-                                    {authMessage && (
-                                        <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{authMessage}</p>
-                                    )}
                                 </dd>
                             </div>
                         </div>
