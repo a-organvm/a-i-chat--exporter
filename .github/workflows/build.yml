@@ -9,7 +9,6 @@ jobs:
   release:
     if: "contains(github.event.head_commit.message, 'chore: release')"
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
         with:
@@ -28,13 +27,13 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
 
       - name: Lint
-        run: pnpm run lint || echo "::warning::Lint failed"
+        run: pnpm run lint
 
       - name: Test
-        run: pnpm run test || echo "::warning::Tests failed"
+        run: pnpm run test
 
       - name: Build
-        run: pnpm run build || echo "::warning::Build failed"
+        run: pnpm run build
 
       - name: Git commit
         id: commit
