@@ -72,7 +72,7 @@ describe('convertToTavern', () => {
       message: {
         id: 'msg-code',
         author: { role: 'assistant', metadata: {} },
-        content: { content_type: 'code', language: 'unknown' as any, text: 'print(1)' },
+        content: { content_type: 'code', language: 'unknown', text: 'print(1)' },
         recipient: 'all',
         status: 'finished_successfully',
         weight: 1,

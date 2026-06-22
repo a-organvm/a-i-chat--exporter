@@ -271,13 +271,13 @@ export interface ConversationNode {
     parent?: string
 }
 
+type ConversationMapping = Record<string, ConversationNode>
+
 export interface ApiConversation {
     create_time: number
     conversation_id?: string
     current_node: string
-    mapping: {
-        [key: string]: ConversationNode
-    }
+    mapping: ConversationMapping
     moderation_results: unknown[]
     title: string
     is_archived: boolean
@@ -362,7 +362,7 @@ type ApiFileDownload = {
     status: 'success'
     /** signed download url */
     download_url: string
-    metadata: {}
+    metadata: Record<string, unknown>
     file_name: string
     /** iso8601 datetime string */
     creation_time: string
@@ -395,13 +395,13 @@ const enum ChatGPTCookie {
     Workspace = '_account',
 }
 
-const sessionApi = urlcat(baseUrl, '/api/auth/session')
-const conversationApi = (id: string) => urlcat(apiUrl, '/conversation/:id', { id })
-const conversationsApi = (offset: number, limit: number) => urlcat(apiUrl, '/conversations', { offset, limit })
-const fileDownloadApi = (id: string) => urlcat(apiUrl, '/files/:id/download', { id })
-const projectsApi = () => urlcat(apiUrl, '/gizmos/snorlax/sidebar', { conversations_per_gizmo: 0 })
-const projectConversationsApi = (gizmo: string, offset: number, limit: number) => urlcat(apiUrl, '/gizmos/:gizmo/conversations', { gizmo, cursor: offset, limit })
-const accountsCheckApi = urlcat(apiUrl, '/accounts/check/v4-2023-04-27')
+const sessionApi: string = urlcat(baseUrl, '/api/auth/session')
+const conversationApi = (id: string): string => urlcat(apiUrl, '/conversation/:id', { id })
+const conversationsApi = (offset: number, limit: number): string => urlcat(apiUrl, '/conversations', { offset, limit })
+const fileDownloadApi = (id: string): string => urlcat(apiUrl, '/files/:id/download', { id })
+const projectsApi = (): string => urlcat(apiUrl, '/gizmos/snorlax/sidebar', { conversations_per_gizmo: 0 })
+const projectConversationsApi = (gizmo: string, offset: number, limit: number): string => urlcat(apiUrl, '/gizmos/:gizmo/conversations', { gizmo, cursor: offset, limit })
+const accountsCheckApi: string = urlcat(apiUrl, '/accounts/check/v4-2023-04-27')
 
 export async function getCurrentChatId(): Promise<string> {
     if (isSharePage()) {
@@ -419,7 +419,7 @@ export async function getCurrentChatId(): Promise<string> {
     throw new Error('No chat id found.')
 }
 
-async function fetchImageFromPointer(uri: string) {
+async function fetchImageFromPointer(uri: string): Promise<string | null> {
     const pointer = uri.replace('file-service://', '')
     const imageDetails = await fetchApi<ApiFileDownload>(fileDownloadApi(pointer))
     if (imageDetails.status === 'error') {
@@ -433,28 +433,30 @@ async function fetchImageFromPointer(uri: string) {
     const image = await fetch(imageDetails.download_url)
     const blob = await image.blob()
     const base64 = await blobToDataURL(blob)
-    return base64.replace(/^data:.*?;/, `data:${image.headers.get('content-type')};`)
+    const contentType = (image.headers.get('content-type') ?? blob.type) || 'application/octet-stream'
+    return base64.replace(/^data:.*?;/, `data:${contentType};`)
+}
+
+function isRecord(value: unknown): value is Record<PropertyKey, unknown> {
+    return typeof value === 'object' && value !== null
+}
+
+function isFileServiceImageAssetPointer(part: unknown): part is MultiModalInputImage {
+    return isRecord(part)
+        && part.content_type === 'image_asset_pointer'
+        && typeof part.asset_pointer === 'string'
+        && part.asset_pointer.startsWith('file-service://')
 }
 
 /** replaces `file-service://` pointers with data uris containing the image */
 /** avoid errors in parsing multimodal parts we don't understand */
 async function replaceImageAssets(conversation: ApiConversation): Promise<void> {
-    const isMultiModalInputImage = (part: any): part is MultiModalInputImage => {
-        return typeof part === 'object'
-        && part !== null
-        && 'content_type' in part
-        && part.content_type === 'image_asset_pointer'
-        && 'asset_pointer' in part
-        && typeof part.asset_pointer === 'string'
-        && part.asset_pointer.startsWith('file-service://')
-    }
-
     const imageAssets = Object.values(conversation.mapping).flatMap((node) => {
         if (!node.message) return []
         if (node.message.content.content_type !== 'multimodal_text') return []
 
         return (Array.isArray(node.message.content.parts) ? node.message.content.parts : [])
-            .filter(isMultiModalInputImage)
+            .filter(isFileServiceImageAssetPointer)
     })
 
     const executionOutputs = Object.values(conversation.mapping).flatMap((node) => {
@@ -495,7 +497,7 @@ export async function fetchConversation(chatId: string, shouldReplaceAssets: boo
 
     if (validChatId.startsWith('__share__')) {
         const id = validChatId.replace('__share__', '')
-        const shareConversation = getConversationFromSharePage() as ApiConversation | null
+        const shareConversation = getConversationFromSharePage()
         if (!shareConversation) {
             throw new Error('Failed to read shared conversation from the page.')
         }
@@ -762,7 +764,7 @@ async function _fetchAccountsCheck(): Promise<ApiAccountsCheck> {
 
 const fetchAccountsCheck = memorize(_fetchAccountsCheck)
 
-const getCookie = (key: string) => document.cookie.match(`(^|;)\\s*${key}\\s*=\\s*([^;]+)`)?.pop() || ''
+const getCookie = (key: string): string => document.cookie.match(`(^|;)\\s*${key}\\s*=\\s*([^;]+)`)?.pop() || ''
 
 export async function getTeamAccountId(): Promise<string | null> {
     const accountsCheck = await fetchAccountsCheck()
@@ -825,7 +827,12 @@ export function processConversation(conversation: ApiConversationWithId): Conver
     }
 }
 
-function extractModel(conversationMapping: Record<string, ConversationNode>) {
+interface ModelInfo {
+    model: string
+    modelSlug: string
+}
+
+function extractModel(conversationMapping: ConversationMapping): ModelInfo {
     let model = ''
     const modelSlug = Object.values(conversationMapping).find(node => node.message?.metadata?.model_slug)?.message?.metadata?.model_slug || ''
     if (modelSlug) {
@@ -847,7 +854,7 @@ function extractModel(conversationMapping: Record<string, ConversationNode>) {
     }
 }
 
-function extractConversationResult(conversationMapping: Record<string, ConversationNode>, startNodeId: string): ConversationNode[] {
+function extractConversationResult(conversationMapping: ConversationMapping, startNodeId: string): ConversationNode[] {
     const result: ConversationNode[] = []
     let currentNodeId: string | undefined = startNodeId
 

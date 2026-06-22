@@ -2,6 +2,24 @@ import { unsafeWindow } from 'vite-plugin-monkey/dist/client'
 import { KEY_OAI_HISTORY_DISABLED } from './constants'
 import { getBase64FromImageUrl, getBase64FromImg } from './utils/dom'
 import { logger } from './utils/logger'
+import type { ApiConversation } from './api'
+
+interface PageUser {
+    email: string
+    group?: unknown[]
+    groups?: string[]
+    id: string
+    image: string
+    intercom_hash: string
+    mfa: boolean
+    name: string
+    picture: string
+}
+
+interface SharedConversationServerResponse {
+    type: 'data'
+    data: ApiConversation
+}
 
 declare global {
     interface Window {
@@ -22,27 +40,15 @@ declare global {
                         public: unknown
                     }
                     serviceStatus: unknown
-                    user: {
-                        email: string
-                        group: unknown[]
-                        id: string
-                        image: string
-                        intercom_hash: string
-                        mfa: boolean
-                        name: string
-                        picture: string
-                    }
+                    user: PageUser
                     userCountry: string
-                    serverResponse?: {
-                        type: 'data'
-                        data: any // Basically ApiConversation
-                    }
+                    serverResponse?: SharedConversationServerResponse
                 }
             }
         }
-        __remixContext: {
+        __remixContext?: {
             basename: string
-            future: {}
+            future: Record<string, unknown>
             state: {
                 loaderData: {
                     root: {
@@ -52,24 +58,12 @@ declare global {
                                 accessToken: string
                                 authProvider: string
                                 expires: string
-                                user: {
-                                    email: string
-                                    group: unknown[]
-                                    id: string
-                                    image: string
-                                    intercom_hash: string
-                                    mfa: boolean
-                                    name: string
-                                    picture: string
-                                }
+                                user: PageUser
                             }
                         }
                     }
                     'routes/share.$shareId.($action)': {
-                        serverResponse: {
-                            type: 'data'
-                            data: any // Basically ApiConversation
-                        }
+                        serverResponse: SharedConversationServerResponse
                     }
                 }
             }
@@ -85,13 +79,13 @@ export function getPageAccessToken(): string | null {
     return unsafeWindow?.__remixContext?.state?.loaderData?.root?.clientBootstrap?.session?.accessToken ?? null
 }
 
-function getUserProfile() {
+function getUserProfile(): PageUser {
     const user = unsafeWindow?.__NEXT_DATA__?.props?.pageProps?.user ?? unsafeWindow?.__remixContext?.state?.loaderData?.root?.clientBootstrap?.session?.user
     if (!user) throw new Error('No user found.')
     return user
 }
 
-export function getChatIdFromUrl() {
+export function getChatIdFromUrl(): string | null {
     // /share/1e5sf-asdf-1234
     // /c/1e5sf-asdf-1234
     // /g/1e5sf-asdf-1234/c/1e5sf-asdf-1234
@@ -100,19 +94,23 @@ export function getChatIdFromUrl() {
     return null
 }
 
-export function isSharePage() {
+export function isSharePage(): boolean {
     return location.pathname.startsWith('/share')
         && !location.pathname.endsWith('/continue')
 }
 
-export function getConversationFromSharePage() {
+function cloneConversation(conversation: ApiConversation): ApiConversation {
+    return structuredClone(conversation)
+}
+
+export function getConversationFromSharePage(): ApiConversation | null {
     if (window.__NEXT_DATA__?.props?.pageProps?.serverResponse?.data) {
         // Next.js or OpenAI started to freeze some objects, so we do a
         // deep copy here to avoid polluting the original object
-        return JSON.parse(JSON.stringify(window.__NEXT_DATA__.props.pageProps.serverResponse.data))
+        return cloneConversation(window.__NEXT_DATA__.props.pageProps.serverResponse.data)
     }
     if (window.__remixContext?.state?.loaderData?.['routes/share.$shareId.($action)']?.serverResponse?.data) {
-        return JSON.parse(JSON.stringify(window.__remixContext.state.loaderData['routes/share.$shareId.($action)'].serverResponse.data))
+        return cloneConversation(window.__remixContext.state.loaderData['routes/share.$shareId.($action)'].serverResponse.data)
     }
     return null
 }
@@ -140,6 +138,6 @@ export async function getUserAvatar(): Promise<string> {
     return defaultAvatar
 }
 
-export function checkIfConversationStarted() {
+export function checkIfConversationStarted(): boolean {
     return !!document.querySelector('[data-testid^="conversation-turn-"]')
 }
