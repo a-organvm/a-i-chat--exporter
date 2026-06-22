@@ -26,12 +26,8 @@ ChatGPT Exporter lives inside ORGAN-III (Ergon), the commerce and product organ 
 - [Pricing and Monetization](#pricing-and-monetization)
 - [Technical Architecture](#technical-architecture)
 - [Supported Export Formats](#supported-export-formats)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Bulk Export and Conversation Management](#bulk-export-and-conversation-management)
+- [Usage](#usage)
 - [Internationalization](#internationalization)
-- [Configuration and Settings](#configuration-and-settings)
-- [Build System and Development](#build-system-and-development)
 - [Cross-Organ Context](#cross-organ-context)
 - [Related Work](#related-work)
 - [Contributing](#contributing)
@@ -48,18 +44,18 @@ The tool is also available through [GreasyFork](https://greasyfork.org/scripts/4
 
 ### What It Does
 
-- **Single conversation export** — One-click export of the currently open conversation in any of five formats.
-- **Bulk conversation export** *(Pro)* — Select multiple conversations (or all of them) and export as a ZIP archive. Supports Markdown, HTML, JSON, and the official OpenAI JSON schema.
-- **Official export file import** — Upload a `conversations.json` file downloaded from OpenAI's data export feature, then re-export it in more useful formats.
-- **Project-scoped export** — Filter and export conversations belonging to specific ChatGPT Projects (OpenAI's "Gizmos" system).
-- **Conversation management** — Archive or delete conversations in bulk directly from the export dialog.
+- **Single conversation export** — Export the currently open conversation in any of five formats after the local API Auth gate is unlocked for API-backed formats.
+- **Bulk conversation export** *(Pro)* — Select multiple conversations (or all of them) and export Markdown, HTML, JSON, or JSON ZIP output.
+- **Official export file import** *(Pro)* — Upload a JSON array such as OpenAI's `conversations.json` export, then re-export selected conversations from the bulk dialog.
+- **Project-scoped export** *(Pro)* — Filter API-loaded bulk exports by ChatGPT Projects (OpenAI's "Gizmos" system).
+- **Conversation management** *(Pro)* — Archive or delete API-loaded conversations in bulk directly from the export dialog.
 - **Timestamp injection** — Optionally display per-message timestamps inline within the ChatGPT interface, with configurable 12h/24h format.
-- **Customizable filenames** — Configure filename patterns using template variables (`{title}`, `{date}`, `{id}`, etc.).
+- **Customizable filenames** — Configure filename patterns using template variables (`{title}`, `{date}`, `{timestamp}`, `{chat_id}`, `{create_time}`, `{update_time}`).
 - **Metadata front matter** — Attach custom key-value metadata to Markdown and HTML exports (title, source URL, model name, creation time, etc.).
 
 ### Key Numbers
 
-- **Version:** 2.29.1 (as of July 2025)
+- **Version:** 2.29.1 (from `package.json`)
 - **Supported domains:** `chatgpt.com`, `chat.openai.com`, `new.oaifree.com`
 - **Export formats:** 5 (Markdown, HTML, JSON, PNG, Text)
 - **Locales:** 9 (English, Spanish, French, Indonesian, Japanese, Russian, Turkish, Simplified Chinese, Traditional Chinese)
@@ -79,7 +75,7 @@ The design philosophy is zero-friction: no accounts, no servers, no cloud depend
 
 ChatGPT Exporter is **free and open-source** at its core. The userscript installs from GreasyFork or GitHub, runs entirely in your browser, and never asks for an account. There is no paywall on the everyday workflow: opening a conversation and exporting it to Markdown, HTML, JSON, PNG, or text is — and stays — free.
 
-The project sustains itself through a two-tier model. The free tier covers the individual export workflow that the overwhelming majority of users need. A paid **Pro** tier covers the heavier, batch-oriented workflows that have real costs (maintenance, multi-provider reverse-engineering, support) attached.
+The project sustains itself through a two-tier model. The free tier covers the individual export workflow that the overwhelming majority of users need. A paid **Pro** tier covers the heavier, batch-oriented workflows guarded by the `bulk-export` and `multi-provider-export` feature flags.
 
 ### Who Pays
 
@@ -89,27 +85,26 @@ Pro is aimed at people for whom export is part of their job or research, and who
 
 - **Researchers and writers** building corpora out of hundreds of conversations.
 - **Developers and knowledge workers** piping bulk exports into note systems, RAG pipelines, or version control.
-- **Multi-platform users** who live across ChatGPT, Claude, and Gemini and want one consistent export path for all of them.
+- **Users of Pro-gated import/conversion controls** such as official JSON-file import and TavernAI/Ooba JSON conversion.
 
 ### Tier Comparison
 
 | Capability | Free | Pro |
 |------------|:----:|:---:|
-| Single-conversation export (Markdown, HTML, JSON, PNG, Text) | ✅ | ✅ |
-| Timestamp injection and custom filename templates | ✅ | ✅ |
-| Metadata front matter | ✅ | ✅ |
-| Official `conversations.json` import and re-export | ✅ | ✅ |
-| 9-language localized UI | ✅ | ✅ |
-| No account, no upload, local-only files | ✅ | ✅ |
-| **Bulk export** (select-many / select-all → ZIP archive) | — | ✅ |
-| **Multi-provider export** (ChatGPT + Claude + Gemini) | — | ✅ |
-| Priority support | — | ✅ |
+| Single-conversation export (Markdown, HTML, OpenAI-format JSON, PNG, Text) | Yes | Yes |
+| Timestamp injection and custom filename templates | Yes | Yes |
+| Metadata front matter for Markdown and HTML | Yes | Yes |
+| 9-language localized UI | Yes | Yes |
+| No remote exporter service; files are produced locally in the browser | Yes | Yes |
+| Bulk export from ChatGPT's API | No | Yes |
+| Official JSON-file import and re-export from the bulk dialog | No | Yes |
+| TavernAI JSONL and Ooba JSON conversion buttons | No | Yes |
 
 The two Pro capabilities map directly to the feature flags in the codebase (`PRO_FEATURES` in [`src/ui/SettingContext.tsx`](./src/ui/SettingContext.tsx)): `bulk-export` and `multi-provider-export`.
 
 ### Plan and Status
 
-Pro is planned as a **$19 one-time license** (not a subscription) sold through a [hosted checkout](https://aichatexporter.com/pro). After purchase, the hosted checkout can return the license key to ChatGPT Exporter automatically; you can also paste the key into the settings panel. The key is stored locally via Tampermonkey storage and unlocks Pro features in place after verification.
+The code supports a hosted Lemon Squeezy checkout URL when `VITE_LEMON_SQUEEZY_CHECKOUT_URL` is configured at build time. After purchase, the checkout can return the license key to ChatGPT Exporter automatically; you can also paste the key into the settings panel. The key is stored locally via Tampermonkey storage and unlocks Pro features in place after verification.
 
 > **Status — first revenue slice implemented.** The Pro gate now fails closed against signed-key or Lemon Squeezy validation, captures checkout-return license keys, scrubs license material from the URL, and gates bulk / multi-provider export through `PRO_FEATURES`. A production checkout URL still needs to be configured at build time, and live Claude/Gemini extraction remains foundation-only — see [Architecture: providers](#architecture-providers).
 
@@ -235,97 +230,155 @@ Copies the conversation to your clipboard as plain text. Markdown formatting is 
 
 ---
 
-## Installation
+## Usage
 
-### Prerequisites
+This repository builds a browser userscript. The runtime entrypoint is
+[`src/main.tsx`](./src/main.tsx), and the distributable userscript is
+`dist/chatgpt.user.js`. The package is marked private and does not define an
+npm `bin`, `main`, `module`, or `exports` API.
 
-Install **Tampermonkey** for your browser:
+### Install the userscript
 
-| Browser | Install Link |
-|---------|-------------|
-| Chrome | [Chrome Web Store](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) |
-| Firefox | [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/tampermonkey) |
-| Edge | [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd) |
-
-### Install the Userscript
-
-Choose one:
+Install a userscript manager such as **Tampermonkey**, then install one of the
+published userscript files:
 
 | Source | Link |
 |--------|------|
-| **GreasyFork** (recommended) | [Install from GreasyFork](https://greasyfork.org/scripts/456055-chatgpt-exporter) |
-| **GitHub (raw)** | [Install from GitHub](https://raw.githubusercontent.com/organvm-iii-ergon/a-i-chat--exporter/master/dist/chatgpt.user.js) |
+| GreasyFork | [Install from GreasyFork](https://greasyfork.org/scripts/456055-chatgpt-exporter) |
+| GitHub raw userscript | [Install `dist/chatgpt.user.js`](https://raw.githubusercontent.com/organvm-iii-ergon/a-i-chat--exporter/master/dist/chatgpt.user.js) |
 
-Click the link, and Tampermonkey will prompt you to install the script. Once installed, navigate to [chatgpt.com](https://chatgpt.com/) and you will see the export menu in the sidebar.
+The userscript metadata in [`vite.config.ts`](./vite.config.ts) matches these
+hosts: `chatgpt.com`, `chat.openai.com`, and `new.oaifree.com`. It runs on the
+root page, `?model=*`, `/c/*`, `/g/*`, `/gpts`, `/gpts/*`, `/share/*`, and
+`/share/*/continue` paths for those hosts.
 
----
+### Run it in ChatGPT
 
-## Quick Start
+After installation, open a supported ChatGPT page. The script injects an
+**Export** menu into the sidebar. On share pages it injects the same menu above
+the shared conversation content. If ChatGPT history is disabled, the injected
+menu shows **Chat History disabled** and the export actions are not available.
 
-1. **Open any ChatGPT conversation** at `chatgpt.com`.
-2. **Look for the export menu** at the bottom of the sidebar (left navigation panel).
-3. **Click a format button** — Markdown, HTML, JSON, PNG, or Text.
-4. **The file downloads automatically** (or copies to clipboard for Text).
+API-backed actions require the local **API Auth** gate first:
 
-That is the entire workflow. No configuration is required for basic use.
+1. Open **Export** -> **Exporter Settings**.
+2. In **API Auth**, click **Issue API key**.
+3. Keep the issued key if you need to unlock again later. The plaintext key is
+   shown by the UI, while the script stores only a SHA-256 digest in
+   Tampermonkey storage.
+4. If the current tab is locked later, paste the key into **API Auth** and click
+   **Unlock**. **Revoke** removes the stored digest and session authorization.
 
-### Example: Markdown Output
+### Single-conversation actions
 
-```markdown
----
-title: ChatGPT Exporter Creation
-source: https://chatgpt.com/c/cf3f8850-1d69-43c8-b99b-affd0de4e76f
-model: GPT-4o
-create_time: 2025-03-15T10:23:41Z
----
+Open a conversation before using these actions. Otherwise the script alerts that
+a conversation must be started first.
 
-# ChatGPT Exporter Creation
+| Menu action | Actual behavior |
+|-------------|-----------------|
+| **Copy Text** | Fetches the current conversation, converts messages to plain text, and copies the result to the clipboard. Images become `[image]` placeholders. |
+| **Screenshot** | Captures the conversation thread DOM with `html2canvas` and downloads a `.png`. It does not call the backend API. Very large conversations can hit browser canvas limits and fail. |
+| **Markdown** | Fetches the current conversation and downloads a `.md` file. Optional metadata and Markdown timestamps come from settings. |
+| **HTML** | Fetches the current conversation and downloads a self-contained `.html` file using `src/template.html`. Optional metadata and HTML timestamps come from settings. |
+| **JSON** -> **OpenAI Official Format** | Fetches the current conversation and downloads a `.json` file containing an array with the raw conversation response. |
+| **JSON** -> **JSONL (TavernAI, SillyTavern)** | Converts the current conversation to JSONL. This button is disabled unless the verified Pro license grants `multi-provider-export`. |
+| **JSON** -> **Ooba (text-generation-webui)** | Converts the current conversation to the Ooba JSON shape. This button is disabled unless the verified Pro license grants `multi-provider-export`. |
 
-#### You:
-I'm creating a ChatGPT Exporter. What do you think?
+The default filename format is `ChatGPT-{title}`. File naming replaces
+`{title}`, `{date}`, `{timestamp}`, `{chat_id}`, `{create_time}`, and
+`{update_time}`; the title is sanitized and spaces become underscores.
 
-#### ChatGPT:
-It sounds like you're planning on creating a tool that uses the ChatGPT
-model to export text...
+### Export All
+
+**Export All** opens the bulk dialog. It is disabled unless the verified Pro
+license grants `bulk-export`.
+
+From the API source, the dialog fetches projects and conversation lists from
+ChatGPT, then lets you select conversations, optionally filter by project, and
+choose one output type:
+
+| Output type | Downloaded file |
+|-------------|-----------------|
+| Markdown | `chatgpt-export-markdown.zip` containing `.md` files |
+| HTML | `chatgpt-export-html.zip` containing `.html` files |
+| JSON | `chatgpt-export.json` containing the selected raw conversations in one array |
+| JSON (ZIP) | `chatgpt-export-json.zip` containing one `.json` file per conversation |
+
+The dialog uses a `RequestQueue` with 200 ms spacing and 1600 ms backoff for
+conversation fetches, archive requests, and delete requests. **Archive** and
+**Delete** are available only for API-loaded conversations and ask for browser
+confirmation before sending the request.
+
+The upload button imports an official `conversations.json`-style file only when
+the JSON parses as an array. In the current UI it is also gated by the
+`multi-provider-export` Pro feature. Imported local conversations can be
+re-exported by the same Markdown, HTML, JSON, and JSON (ZIP) choices, but they
+cannot be archived or deleted.
+
+### Settings
+
+Open **Export** -> **Exporter Settings** to change persisted userscript
+settings:
+
+| Setting | Actual behavior |
+|---------|-----------------|
+| **Language** | Selects one of the locales in `src/i18n.ts`; the value is stored as `exporter:language`. |
+| **File Name** | Edits the filename template. Default: `ChatGPT-{title}`. |
+| **Export All Limit** | Controls the maximum conversations fetched by Export All. Default: `1000`; slider range: `100` to `20000` in steps of `100`. |
+| **Pro License** | Stores the license key as `exporter:pro_license_key` and verifies it with the license helpers. **Buy Pro** is enabled only when `VITE_LEMON_SQUEEZY_CHECKOUT_URL` is configured at build time. |
+| **API Auth** | Issues, unlocks, and revokes the local API gate required before backend API calls run. |
+| **Conversation Timestamp** | Injects per-message timestamps into the ChatGPT page when enabled. Optional sub-toggles enable 24-hour display, HTML export timestamps, and Markdown export timestamps. |
+| **Export Metadata** | Adds configured key/value metadata to Markdown front matter and to the HTML metadata block. Defaults to `title: {title}` and `source: {source}` when enabled. |
+
+Markdown metadata values replace `{title}`, `{date}`, `{timestamp}`,
+`{source}`, `{model}`, `{model_name}`, `{create_time}`, and `{update_time}`.
+The HTML exporter uses the same values, except the current code replaces the
+model slug with `{mode_name}`.
+
+### Development commands
+
+Use Node.js `>=20.0.0` and pnpm `8.14.1` as declared in
+[`package.json`](./package.json).
+
+```bash
+pnpm install
+pnpm dev
+pnpm build
+pnpm test
+pnpm lint
+pnpm lint:fix
 ```
 
-### Example: Plain Text Output
+The scripts are:
 
+| Command | Actual script |
+|---------|---------------|
+| `pnpm dev` | `vite` |
+| `pnpm build` | `vite build`; writes `dist/chatgpt.user.js` |
+| `pnpm test` | `vitest run && tsc --noEmit` |
+| `pnpm lint` | `eslint .` |
+| `pnpm lint:fix` | `eslint . --fix` |
+| `pnpm prepare` | `husky` |
+| `pnpm run site:build` | `node scripts/build-site.mjs --build`; rebuilds the userscript and assembles `dist-site/` |
+| `pnpm run preview:site` | `node scripts/build-site.mjs && npx --yes serve dist-site -l 8080` |
+| `pnpm run deploy` | `docker compose up -d --build` |
+| `pnpm run deploy:docker` | `docker compose up -d --build` |
+| `pnpm run deploy:vercel` | `npx --yes vercel deploy --prod` |
+| `pnpm run deploy:cloudflare` | `pnpm run site:build && npx --yes wrangler pages deploy dist-site --project-name chatgpt-exporter` |
+
+The static-site helper has one flag:
+
+```bash
+node scripts/build-site.mjs          # build only if dist/chatgpt.user.js is missing, then assemble dist-site/
+node scripts/build-site.mjs --build  # always run pnpm run build first, then assemble dist-site/
 ```
-You:
-I'm creating a ChatGPT Exporter. What do you think?
 
-ChatGPT:
-It sounds like you're planning on creating a tool that uses the ChatGPT
-model to export text. ChatGPT is a large language model trained by OpenAI
-that is designed to generate human-like text responses based on a given
-input...
+Set `VITE_LEMON_SQUEEZY_CHECKOUT_URL` at build time to enable the in-app
+**Buy Pro** button:
+
+```bash
+VITE_LEMON_SQUEEZY_CHECKOUT_URL="https://your-store.lemonsqueezy.com/buy/..." pnpm build
 ```
-
----
-
-## Bulk Export and Conversation Management
-
-> Bulk export is a **Pro** capability — see [Pricing and Monetization](#pricing-and-monetization). Single-conversation export remains free for everyone.
-
-Click **"Export All"** in the sidebar menu to open the bulk export dialog. This dialog provides three workflows:
-
-### Export from API
-
-The dialog loads your complete conversation list from ChatGPT's API (up to a configurable maximum, default 1,000). You can:
-
-1. **Filter by project** — Use the project dropdown to scope the list to a specific ChatGPT Project.
-2. **Select conversations** — Check individual conversations or use "Select All."
-3. **Choose format** — Markdown, HTML, JSON, or JSON (ZIP).
-4. **Click Export** — The tool fetches each conversation's full data with rate limiting (200ms minimum between requests, 1600ms backoff), then downloads a ZIP archive.
-
-### Export from Official File
-
-Click the upload icon to import a `conversations.json` file downloaded from OpenAI's data export feature (Settings > Data controls > Export data). The dialog switches to local mode and lets you re-export the imported conversations in any supported format.
-
-### Conversation Management
-
-The bulk dialog also provides **Archive** and **Delete** buttons for managing your conversation history directly from the export interface, with confirmation dialogs and rate-limited API calls.
 
 ---
 
@@ -346,127 +399,6 @@ The interface is fully localized in 9 languages:
 | Traditional Chinese | `zh-Hant` |
 
 Language detection follows a cascade: user's stored preference, ChatGPT's locale setting (from `localStorage`), browser language, then fallback to English. The language can be changed in the settings dialog.
-
----
-
-## Configuration and Settings
-
-Open the settings panel from the export menu to configure:
-
-| Setting | Description | Default |
-|---------|-------------|---------|
-| **Filename format** | Template string for exported filenames. Supports `{title}`, `{date}`, `{id}`, `{create_time}`, `{update_time}` variables. | `{title}` |
-| **Timestamps** | Show per-message timestamps in the ChatGPT interface and/or in exports. | Disabled |
-| **24-hour format** | Use 24-hour time format for timestamps. | Off (12h) |
-| **Markdown timestamps** | Include timestamps in Markdown exports. | Off |
-| **HTML timestamps** | Include timestamps in HTML exports. | Off |
-| **Metadata** | Custom key-value pairs appended as YAML front matter (Markdown) or collapsible details (HTML). Template variables: `{title}`, `{date}`, `{timestamp}`, `{source}`, `{model}`, `{model_name}`, `{create_time}`, `{update_time}`. | Empty |
-| **Export all limit** | Maximum number of conversations fetched during bulk export. | 1,000 |
-| **Language** | UI language. | Auto-detected |
-| **API auth** | Issue, unlock, or revoke the exporter API key required before ChatGPT backend export calls run. | Not issued |
-
-All settings persist across sessions via Tampermonkey's storage API.
-
-### API Auth Config Path
-
-The userscript does not ship with a default API key. Open **Exporter Settings**
-and use **API Auth** to issue a key before using API-backed exports. The newly
-issued key is shown once and is verified locally before the primary ChatGPT
-backend calls run.
-
-Secret/config storage:
-
-| Key | Storage | Contents |
-|-----|---------|----------|
-| `exporter:auth:api_key_digest` | Tampermonkey `GM_setValue` via `ScriptStorage`, falling back to `localStorage` if needed | SHA-256 digest of the issued API key |
-| `exporter:auth:api_key_issued_at` | Same persistent script storage | ISO timestamp for the current issued key |
-| `exporter:auth:verified_digest` | `sessionStorage` | Digest authorized for the current browser tab/session |
-
-The plaintext API key is not persisted by the exporter. Revoking the key deletes
-the stored digest, issue timestamp, and current session authorization marker.
-
----
-
-## Build System and Development
-
-### Prerequisites
-
-- Node.js >= 20.0.0
-- [pnpm](https://pnpm.io/) 8.x
-
-### Setup
-
-```bash
-git clone https://github.com/organvm-iii-ergon/a-i-chat--exporter.git
-cd a-i-chat--exporter
-pnpm install
-```
-
-### Development
-
-```bash
-pnpm dev
-```
-
-This starts a Vite dev server that auto-opens ChatGPT in your browser. Tampermonkey will prompt you to install the development script. Changes hot-reload.
-
-### Build
-
-```bash
-pnpm build
-```
-
-Produces `dist/chatgpt.user.js` — the standalone userscript ready for distribution.
-
-### Deploy (self-host the install page)
-
-Host the userscript plus a one-click install landing page on any static host or
-container. One command:
-
-```bash
-pnpm run deploy            # Docker + nginx → http://localhost:8080
-pnpm run deploy:vercel     # → Vercel
-pnpm run deploy:cloudflare # → Cloudflare Pages
-```
-
-`pnpm run site:build` assembles the deployable `dist-site/` (landing page +
-userscript + headers); `pnpm run preview:site` serves it locally. Pushing to
-`master` also runs `.github/workflows/deploy.yml`. Full details in
-[`docs/deploy.md`](docs/deploy.md).
-
-### Lint and Type Check
-
-```bash
-pnpm lint        # ESLint
-pnpm test        # TypeScript type checking (tsc --noEmit)
-```
-
-### Dependencies
-
-**Runtime** (bundled or CDN-loaded):
-- `preact` — Lightweight React-compatible UI framework (aliased to React)
-- `@radix-ui/react-dialog`, `@radix-ui/react-hover-card` — Accessible UI primitives
-- `i18next` + `react-i18next` — Internationalization framework
-- `jszip` — ZIP archive generation (loaded from jsDelivr CDN)
-- `html2canvas` — DOM-to-canvas screenshot (loaded from jsDelivr CDN)
-- `mdast-util-from-markdown`, `mdast-util-to-markdown`, `mdast-util-to-hast` — Markdown AST processing
-- `micromark-extension-gfm`, `mdast-util-gfm` — GitHub Flavored Markdown support
-- `hast-util-to-html` — HTML generation from HAST (Hypertext AST)
-- `sentinel-js` — DOM mutation observer for SPA navigation
-- `sanitize-filename` — Safe filename generation
-- `vite-plugin-monkey` — Tampermonkey userscript packaging
-
-**Dev-only:**
-- `vite` — Build tool
-- `typescript` — Type system
-- `eslint` — Linting
-- `husky` — Git hooks (pre-commit, pre-push, commit-msg)
-- `commitlint` — Conventional commits enforcement
-- `katex` — LaTeX math typesetting (type definitions)
-
-### Commit Convention
-
-This project follows [Conventional Commits](https://www.conventionalcommits.org/). Commit messages are enforced via commitlint and husky pre-commit hooks.
 
 ---
 
