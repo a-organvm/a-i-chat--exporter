@@ -45,7 +45,7 @@ export function flatMap<T extends Node>(
     function transform(node: Node, i: number, parent?: Parent): Node[] {
         if ('children' in node) {
             const p = node as unknown as Parent
-            p.children = p.children.flatMap((item, i) => transform(item, i, p)) as any
+            p.children = p.children.flatMap((item, i) => transform(item, i, p)) as Parent['children']
         }
         return fn(node, i, parent)
     }

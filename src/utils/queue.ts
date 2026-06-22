@@ -13,11 +13,13 @@ interface ProgressEvent {
     currentStatus: 'processing' | 'retrying'
 }
 
+type RequestQueueEvents<T> = {
+    done: T[]
+    progress: ProgressEvent
+}
+
 export class RequestQueue<T> {
-    private eventEmitter = EventEmitter<{
-        done: T[]
-        progress: ProgressEvent
-    } & Record<string, any[]>>()
+    private eventEmitter = EventEmitter<RequestQueueEvents<T>>()
 
     private queue: Array<RequestObject<T>> = []
     private results: T[] = []
@@ -61,7 +63,7 @@ export class RequestQueue<T> {
 
     on(event: 'progress', fn: (progress: ProgressEvent) => void): () => void
     on(event: 'done', fn: (result: T[]) => void): () => void
-    on(event: string, fn: (...args: any[]) => void): () => void {
+    on<K extends keyof RequestQueueEvents<T>>(event: K, fn: (event: RequestQueueEvents<T>[K]) => void): () => void {
         this.eventEmitter.on(event, fn)
         return () => this.eventEmitter.off(event, fn)
     }

@@ -37,7 +37,7 @@ export function unixTimestampToISOString(timestamp: number) {
     return (new Date(timestamp * 1000)).toISOString()
 }
 
-export function jsonlStringify(list: any[]): string {
+export function jsonlStringify(list: unknown[]): string {
     // This _has_ to be stringified without adding any indentation
-    return list.map((msg: any) => JSON.stringify(msg)).join('\n')
+    return list.map((msg: unknown) => JSON.stringify(msg)).join('\n')
 }

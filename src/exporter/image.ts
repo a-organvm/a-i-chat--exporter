@@ -6,7 +6,7 @@ import { Effect } from '../utils/effect'
 import { sleep } from '../utils/utils'
 
 // https://github.com/niklasvh/html2canvas/issues/2792#issuecomment-1042948572
-function fnIgnoreElements(el: any) {
+function fnIgnoreElements(el: Element): boolean {
     return typeof el.shadowRoot === 'object' && el.shadowRoot !== null
 }
 

@@ -67,7 +67,7 @@ describe('unixTimestampToISOString', () => {
   });
 
   it('returns empty string for falsy value', () => {
-    expect(unixTimestampToISOString(undefined as any)).toBe('');
+    expect(unixTimestampToISOString(undefined as unknown as number)).toBe('');
   });
 });
 

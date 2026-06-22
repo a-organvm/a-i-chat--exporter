@@ -58,14 +58,14 @@ export class LocalStorage {
 }
 
 export class MemoryStorage {
-    private static map = new Map<string, any>()
+    private static map = new Map<string, unknown>()
 
     static supported = true
 
     static get<T>(key: string): T | null {
         const item = this.map.get(key)
         if (!item) return null
-        return item
+        return item as T
     }
 
     static set<T>(key: string, value: T): void {

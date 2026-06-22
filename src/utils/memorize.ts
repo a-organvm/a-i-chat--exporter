@@ -1,17 +1,19 @@
-const generateKey = (args: any[]) => JSON.stringify(args)
+type MemorizedFunction<Args extends readonly unknown[], Result> = (...args: Args) => Result
 
-export function memorize<T extends (...args: any[]) => any>(fn: T): T {
-    const cache = new Map<string, any>()
+const generateKey = (args: readonly unknown[]): string => JSON.stringify(args)
 
-    const memorized = (...args: Parameters<T>): ReturnType<T> => {
+export function memorize<Args extends readonly unknown[], Result>(fn: MemorizedFunction<Args, Result>): MemorizedFunction<Args, Result> {
+    const cache = new Map<string, Result>()
+
+    const memorized = (...args: Args): Result => {
         const key = generateKey(args)
         if (cache.has(key)) {
-            return cache.get(key)
+            return cache.get(key)!
         }
         const result = fn(...args)
         cache.set(key, result)
         return result
     }
 
-    return memorized as T
+    return memorized
 }
