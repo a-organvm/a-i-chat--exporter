@@ -108,18 +108,14 @@ The code supports a hosted Lemon Squeezy checkout URL when `VITE_LEMON_SQUEEZY_C
 
 > **Status — first revenue slice implemented.** The Pro gate now fails closed against signed-key or Lemon Squeezy validation, captures checkout-return license keys, scrubs license material from the URL, and gates bulk / multi-provider export through `PRO_FEATURES`. A production checkout URL still needs to be configured at build time, and live Claude/Gemini extraction remains foundation-only — see [Architecture: providers](#architecture-providers).
 
-### Supporting the Project
-
-If the free tier saves you time and you would rather just chip in, the lowest-friction options are to [sponsor on GitHub](https://github.com/sponsors/4444J99) or [buy me a coffee](https://ko-fi.com/4444J99). Sponsorship is appreciated but never required — the free tier has no nag screens and no feature degradation.
-
 ### Support / Sponsor
 
-For ongoing support, you can contribute via our official funding channels:
+If ChatGPT Exporter helps you, support is optional but appreciated:
 
-- **[GitHub Sponsors](https://github.com/sponsors/organvm)** — Direct support through GitHub's sponsorship platform
-- **[Ko-fi](https://ko-fi.com/organvm)** — Buy me a coffee (TODO: update with exact Ko-fi username when available)
+- **[GitHub Sponsors](https://github.com/sponsors/organvm)**
+- **Ko-fi:** `TODO_KO_FI_SLUG` → https://ko-fi.com/TODO_KO_FI_SLUG
 
-These channels ensure the project remains sustainable and continue to receive regular maintenance and improvements.
+Free usage and functionality are unchanged; sponsoring just helps keep maintenance and releases steady.
 
 ---
 
