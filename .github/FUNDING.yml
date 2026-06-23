@@ -1,5 +1,7 @@
-github: [4444J99]
-ko_fi: 4444J99
-custom:
-  - https://aichatexporter.com/pro
-  - https://ko-fi.com/4444J99/tip
+ko-fi:
+  # TODO: Add your Ko-fi username (slug) here
+  # Example: https://ko-fi.com/YOUR_USERNAME
+  # Leave as is if the exact Ko-fi slug isn't known yet
+  # TODO: REPLACE_WITH_KO_FI_USERNAME
+
+github: organvm
