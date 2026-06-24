@@ -94,3 +94,49 @@ export function assertValidRequestUrl(url: unknown, label = 'request url'): stri
 
     return url
 }
+
+/**
+ * Validate and sanitize URLs for use in HTML attributes (src, href, etc).
+ * Rejects javascript:, data:, and other potentially dangerous protocols.
+ * Allows https:, http:, mailto:, and blob: (for exported assets).
+ */
+export function assertValidHtmlUrl(url: unknown, label = 'URL'): string {
+    if (typeof url !== 'string' || url.trim().length === 0) {
+        throw new ValidationError(`${label} must not be empty.`)
+    }
+
+    const trimmed = url.trim()
+
+    // Allow data URIs for base64-encoded images (used for avatars)
+    if (trimmed.startsWith('data:')) {
+        // Basic validation: ensure it's a well-formed data URI
+        if (/^data:[a-z]+\/[a-z0-9+.-]+;[a-z0-9]+,/.test(trimmed)) {
+            return trimmed
+        }
+        throw new ValidationError(`${label} is not a valid data URI.`)
+    }
+
+    // Allow blob URLs for exported assets
+    if (trimmed.startsWith('blob:')) {
+        return trimmed
+    }
+
+    // Allow standard web URLs
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        try {
+            new URL(trimmed)
+            return trimmed
+        }
+        catch {
+            throw new ValidationError(`${label} is not a valid URL.`)
+        }
+    }
+
+    // Allow mailto links
+    if (trimmed.startsWith('mailto:')) {
+        return trimmed
+    }
+
+    // Reject everything else (javascript:, vbscript:, etc)
+    throw new ValidationError(`${label} uses an unsupported protocol.`)
+}

@@ -9,6 +9,7 @@ import { fromMarkdown, toHtml } from '../utils/markdown'
 import { ScriptStorage } from '../utils/storage'
 import { standardizeLineBreaks } from '../utils/text'
 import { dateStr, getColorScheme, timestamp, unixTimestampToISOString } from '../utils/utils'
+import { assertValidHtmlUrl, isValidationError } from '../utils/validation'
 import type { ApiConversationWithId, ConversationNodeMessage, ConversationResult } from '../api'
 import type { ExportMeta } from '../ui/SettingContext'
 
@@ -103,7 +104,7 @@ function conversationToHtml(conversation: ConversationResult, avatar: string, me
         const model = message?.metadata?.model_slug === 'gpt-4' ? 'GPT-4' : 'GPT-3'
         const authorType = message.author.role === 'user' ? 'user' : model
         const avatarEl = message.author.role === 'user'
-            ? `<img alt="${author}" />`
+            ? `<img alt="${escapeHtmlAttribute(author)}" />`
             : '<svg width="41" height="41"><use xlink:href="#chatgpt" /></svg>'
 
         let postSteps: Array<(input: string) => string> = []
@@ -155,7 +156,9 @@ function conversationToHtml(conversation: ConversationResult, avatar: string, me
             const date = new Date(timestamp * 1000)
             // format: 20:12 / 08:12 PM
             conversationTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: !timeStamp24H })
-            timestampHtml = `<time class="time" datetime="${date.toISOString()}" title="${date.toLocaleString()}">${conversationTime}</time>`
+            const isoString = escapeHtmlAttribute(date.toISOString())
+            const localeString = escapeHtmlAttribute(date.toLocaleString())
+            timestampHtml = `<time class="time" datetime="${isoString}" title="${localeString}">${escapeHtml(conversationTime)}</time>`
         }
 
         return `
@@ -198,18 +201,18 @@ function conversationToHtml(conversation: ConversationResult, avatar: string, me
         ? `<details>
     <summary>Metadata</summary>
     <div class="metadata_container">
-        ${_metaList.map(([key, value]) => `<div class="metadata_item"><div>${key}</div><div>${value}</div></div>`).join('\n')}
+        ${_metaList.map(([key, value]) => `<div class="metadata_item"><div>${escapeHtml(key)}</div><div>${escapeHtml(value)}</div></div>`).join('\n')}
     </div>
 </details>`
         : ''
 
     const html = templateHtml
-        .replaceAll('{{title}}', title)
-        .replaceAll('{{date}}', date)
-        .replaceAll('{{time}}', time)
-        .replaceAll('{{source}}', source)
-        .replaceAll('{{lang}}', lang)
-        .replaceAll('{{theme}}', theme)
+        .replaceAll('{{title}}', escapeHtml(title))
+        .replaceAll('{{date}}', escapeHtml(date))
+        .replaceAll('{{time}}', escapeHtml(time))
+        .replaceAll('{{source}}', escapeHtmlAttribute(source))
+        .replaceAll('{{lang}}', escapeHtmlAttribute(lang))
+        .replaceAll('{{theme}}', escapeHtmlAttribute(theme))
         .replaceAll('{{avatar}}', avatar)
         .replaceAll('{{details}}', detailsHtml)
         .replaceAll('{{content}}', conversationHtml)
@@ -259,15 +262,29 @@ function transformContent(
         case 'text':
             return postProcess(content.parts?.join('\n') || '')
         case 'code':
-            return `Code:\n\`\`\`\n${content.text}\n\`\`\`` || ''
+            return `Code:\n\`\`\`\n${content.text}\n\`\`\``
         case 'execution_output':
             if (metadata?.aggregate_result?.messages) {
                 return metadata.aggregate_result.messages
                     .filter(msg => msg.message_type === 'image')
-                    .map(msg => `<img src="${msg.image_url}" height="${msg.height}" width="${msg.width}" />`)
+                    .map((msg) => {
+                        try {
+                            const validUrl = assertValidHtmlUrl(msg.image_url, 'execution output image URL')
+                            const height = escapeHtmlAttribute(String(msg.height))
+                            const width = escapeHtmlAttribute(String(msg.width))
+                            return `<img src=”${validUrl}” height=”${height}” width=”${width}” />`
+                        }
+                        catch (error) {
+                            if (isValidationError(error)) {
+                                return ''
+                            }
+                            throw error
+                        }
+                    })
+                    .filter(Boolean)
                     .join('\n')
             }
-            return postProcess(`Result:\n\`\`\`\n${content.text}\n\`\`\`` || '')
+            return postProcess(`Result:\n\`\`\`\n${content.text}\n\`\`\``)
         case 'tether_quote':
             return postProcess(`> ${content.title || content.text || ''}`)
         case 'tether_browsing_code':
@@ -276,7 +293,7 @@ function transformContent(
             const metadataList = metadata?._cite_metadata?.metadata_list
             if (Array.isArray(metadataList) && metadataList.length > 0) {
                 return postProcess(metadataList.map(({ title, url }) => {
-                    return `> [${title}](${url})`
+                    return `> [${escapeHtml(title)}](${escapeHtml(url)})`
                 }).join('\n'))
             }
             return postProcess('')
@@ -284,15 +301,28 @@ function transformContent(
         case 'multimodal_text': {
             return content.parts?.map((part) => {
                 if (typeof part === 'string') return postProcess(part)
-                if (part.content_type === 'image_asset_pointer') return `<img src="${part.asset_pointer}" height="${part.height}" width="${part.width}" />`
-                if (part.content_type === 'audio_transcription') return `<div style="font-style: italic; opacity: 0.65;">“${part.text}”</div>`
+                if (part.content_type === 'image_asset_pointer') {
+                    try {
+                        const validUrl = assertValidHtmlUrl(part.asset_pointer, 'image asset pointer')
+                        const height = escapeHtmlAttribute(String(part.height))
+                        const width = escapeHtmlAttribute(String(part.width))
+                        return `<img src=”${validUrl}” height=”${height}” width=”${width}” />`
+                    }
+                    catch (error) {
+                        if (isValidationError(error)) {
+                            return ''
+                        }
+                        throw error
+                    }
+                }
+                if (part.content_type === 'audio_transcription') return `<div style=”font-style: italic; opacity: 0.65;”>”${escapeHtml(part.text)}”</div>`
                 if (part.content_type === 'audio_asset_pointer') return null
                 if (part.content_type === 'real_time_user_audio_video_asset_pointer') return null
                 return postProcess('[Unsupported multimodal content]')
             }).join('\n') || ''
         }
         default:
-            return postProcess(`[Unsupported Content: ${content.content_type} ]`)
+            return postProcess(`[Unsupported Content: ${escapeHtml(String(content.content_type))} ]`)
     }
 }
 
@@ -303,4 +333,8 @@ function escapeHtml(html: string) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;')
+}
+
+function escapeHtmlAttribute(attr: string): string {
+    return escapeHtml(attr)
 }
