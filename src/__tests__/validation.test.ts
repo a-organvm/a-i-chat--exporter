@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ValidationError,
   assertValidChatId,
+  assertValidHtmlUrl,
   assertValidPagination,
   assertValidRequestUrl,
   isValidationError,
@@ -69,6 +70,42 @@ describe('assertValidRequestUrl', () => {
   it('rejects relative urls and non-http protocols', () => {
     expect(() => assertValidRequestUrl('/conversation/x')).toThrow(/not a valid URL/);
     expect(() => assertValidRequestUrl('javascript:alert(1)')).toThrow(/must use http/);
+  });
+});
+
+describe('assertValidHtmlUrl', () => {
+  it('accepts http(s) URLs', () => {
+    expect(assertValidHtmlUrl('https://example.com/image.png')).toContain('https://');
+    expect(assertValidHtmlUrl('http://example.com/image.png')).toContain('http://');
+  });
+
+  it('accepts data URIs for embedded images', () => {
+    const dataUri = 'data:image/png;base64,iVBORw0KG';
+    expect(assertValidHtmlUrl(dataUri)).toBe(dataUri);
+  });
+
+  it('accepts blob: URLs for exported assets', () => {
+    const blobUrl = 'blob:https://example.com/12345678';
+    expect(assertValidHtmlUrl(blobUrl)).toBe(blobUrl);
+  });
+
+  it('accepts mailto: links', () => {
+    expect(assertValidHtmlUrl('mailto:user@example.com')).toContain('mailto:');
+  });
+
+  it('rejects dangerous protocols (javascript, vbscript, etc)', () => {
+    expect(() => assertValidHtmlUrl('javascript:alert(1)')).toThrow(/unsupported protocol/);
+    expect(() => assertValidHtmlUrl('vbscript:msgbox')).toThrow(/unsupported protocol/);
+    expect(() => assertValidHtmlUrl('data:text/html,<script>alert(1)</script>')).toThrow(/not a valid data URI/);
+  });
+
+  it('rejects empty or whitespace-only URLs', () => {
+    expect(() => assertValidHtmlUrl('')).toThrow(/must not be empty/);
+    expect(() => assertValidHtmlUrl('   ')).toThrow(/must not be empty/);
+  });
+
+  it('rejects malformed data URIs', () => {
+    expect(() => assertValidHtmlUrl('data:invalid')).toThrow(/not a valid data URI/);
   });
 });
 

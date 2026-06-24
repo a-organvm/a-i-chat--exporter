@@ -231,7 +231,7 @@ function transformContent(
         case 'text':
             return postProcess(content.parts?.join('\n') || '')
         case 'code':
-            return `Code:\n\`\`\`\n${content.text}\n\`\`\`` || ''
+            return `Code:\n\`\`\`\n${content.text}\n\`\`\``
         case 'execution_output':
             if (metadata?.aggregate_result?.messages) {
                 return metadata.aggregate_result.messages
@@ -239,7 +239,7 @@ function transformContent(
                     .map(msg => `![image](${msg.image_url})`)
                     .join('\n')
             }
-            return postProcess(`Result:\n\`\`\`\n${content.text}\n\`\`\`` || '')
+            return postProcess(`Result:\n\`\`\`\n${content.text}\n\`\`\``)
         case 'tether_quote':
             return postProcess(`> ${content.title || content.text || ''}`)
         case 'tether_browsing_code':
