@@ -48,8 +48,16 @@ export class RequestQueue<T> {
     }
 
     stop() {
+        if (this.status === 'COMPLETED' || this.status === 'STOPPED') {
+            return
+        }
+
+        if (this.status === 'IDLE') {
+            this.done()
+            return
+        }
+
         this.status = 'STOPPED'
-        this.eventEmitter.emit('done', this.results)
     }
 
     clear() {
@@ -69,7 +77,11 @@ export class RequestQueue<T> {
     }
 
     private async process() {
-        if (this.status === 'STOPPED' || this.status === 'COMPLETED') {
+        if (this.status === 'STOPPED') {
+            this.done()
+            return
+        }
+        if (this.status === 'COMPLETED') {
             return
         }
 
@@ -92,6 +104,10 @@ export class RequestQueue<T> {
         }
         catch (error) {
             console.error(`Request ${name} failed:`, error)
+            if (this.status === 'STOPPED') {
+                this.done()
+                return
+            }
             this.progress(name, 'retrying')
             this.backoff = Math.min(this.backoff * this.backoffMultiplier, this.maxBackoff)
             this.queue.unshift(requestObject) // add request back to the front of the queue
