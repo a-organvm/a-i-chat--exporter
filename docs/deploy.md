@@ -58,9 +58,6 @@ button.
 - the full hosted Lemon Squeezy checkout URL (preferred)
 - a host/path fragment that resolves to the hosted checkout URL
 
-As a compatibility alias, `VITE_LEMON_SQUEEZY_CHECKOUT_URL` is also supported.
-If you pass a fragment (no protocol), it is normalized with `https://` at runtime.
-
 ```bash
 VITE_LEMONSQUEEZY_STORE_ID="https://your-store.lemonsqueezy.com/buy/..." pnpm run build
 ```
