@@ -68,7 +68,10 @@ export const EXPORTER_PUBLIC_KEY_JWK: JsonWebKey | null = null
 const LEMON_SQUEEZY_VALIDATE_URL = 'https://api.lemonsqueezy.com/v1/licenses/validate'
 
 const LEMON_SQUEEZY_STORE_ID_INPUT =
-    (import.meta.env.VITE_LEMONSQUEEZY_STORE_ID ?? '').trim()
+    ((import.meta.env as Record<string, string | undefined>).LEMONSQUEEZY_STORE_ID
+        ?? import.meta.env.VITE_LEMONSQUEEZY_STORE_ID
+        ?? '')
+        .trim()
 
 function normalizeCheckoutInputUrl(value: string) {
     const trimmed = value.trim()
