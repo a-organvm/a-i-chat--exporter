@@ -114,16 +114,12 @@ Pro features in place after verification.
 
 ### Supporting the Project
 
-If the free tier saves you time and you would rather just chip in, the lowest-friction options are to [sponsor on GitHub](https://github.com/sponsors/4444J99) or [buy me a coffee](https://ko-fi.com/4444J99). Sponsorship is appreciated but never required — the free tier has no nag screens and no feature degradation.
-
 ### Support / Sponsor
 
-For ongoing support, you can contribute via our official funding channels:
+If ChatGPT Exporter saves you time, you can support ongoing maintenance:
 
-- **[GitHub Sponsors](https://github.com/sponsors/organvm)** — Direct support through GitHub's sponsorship platform
-- **[Ko-fi](https://ko-fi.com/organvm)** — Buy me a coffee (TODO: update with exact Ko-fi username when available)
-
-These channels ensure the project remains sustainable and continue to receive regular maintenance and improvements.
+- **[GitHub Sponsors](https://github.com/sponsors/organvm)** for direct sponsorship.
+- **[Ko-fi](https://ko-fi.com/TODO_KO_FI_SLUG)** (TODO: replace `TODO_KO_FI_SLUG` with the final Ko-fi handle).
 
 ---
 
