@@ -334,7 +334,7 @@ settings:
 | **Language** | Selects one of the locales in `src/i18n.ts`; the value is stored as `exporter:language`. |
 | **File Name** | Edits the filename template. Default: `ChatGPT-{title}`. |
 | **Export All Limit** | Controls the maximum conversations fetched by Export All. Default: `1000`; slider range: `100` to `20000` in steps of `100`. |
-| **Pro License** | Stores the license key as `exporter:pro_license_key` and verifies it with the license helpers. **Buy Pro** is enabled only when checkout is configured at build time via `VITE_LEMONSQUEEZY_STORE_ID` (legacy: `VITE_LEMON_SQUEEZY_CHECKOUT_URL`). |
+| **Pro License** | Stores the license key as `exporter:pro_license_key` and verifies it with the license helpers. **Buy Pro** is enabled only when checkout is configured at build time via `VITE_LEMONSQUEEZY_STORE_ID`. |
 | **API Auth** | Issues, unlocks, and revokes the local API gate required before backend API calls run. |
 | **Conversation Timestamp** | Injects per-message timestamps into the ChatGPT page when enabled. Optional sub-toggles enable 24-hour display, HTML export timestamps, and Markdown export timestamps. |
 | **Export Metadata** | Adds configured key/value metadata to Markdown front matter and to the HTML metadata block. Defaults to `title: {title}` and `source: {source}` when enabled. |

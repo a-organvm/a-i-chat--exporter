@@ -67,8 +67,6 @@ export const EXPORTER_PUBLIC_KEY_JWK: JsonWebKey | null = null
 
 const LEMON_SQUEEZY_VALIDATE_URL = 'https://api.lemonsqueezy.com/v1/licenses/validate'
 
-const LEMON_SQUEEZY_CHECKOUT_URL_INPUT =
-    (import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL ?? '').trim()
 const LEMON_SQUEEZY_STORE_ID_INPUT =
     (import.meta.env.VITE_LEMONSQUEEZY_STORE_ID ?? '').trim()
 
@@ -81,7 +79,7 @@ function normalizeCheckoutInputUrl(value: string) {
 }
 
 function resolveCheckoutUrl() {
-    return normalizeCheckoutInputUrl(LEMON_SQUEEZY_STORE_ID_INPUT || LEMON_SQUEEZY_CHECKOUT_URL_INPUT)
+    return normalizeCheckoutInputUrl(LEMON_SQUEEZY_STORE_ID_INPUT)
 }
 
 function base64UrlToBytes(input: string): Uint8Array<ArrayBuffer> {
