@@ -112,14 +112,12 @@ Pro features in place after verification.
 
 > **Status — first revenue slice implemented.** The Pro gate now fails closed against signed-key or Lemon Squeezy validation, captures checkout-return license keys, scrubs license material from the URL, and gates bulk / multi-provider export through `PRO_FEATURES`. A production checkout URL still needs to be configured at build time, and live Claude/Gemini extraction remains foundation-only — see [Architecture: providers](#architecture-providers).
 
-### Supporting the Project
-
 ### Support / Sponsor
 
-If ChatGPT Exporter saves you time, you can support ongoing maintenance:
+If this project helps you, you can support maintenance here:
 
-- **[GitHub Sponsors](https://github.com/sponsors/organvm)** for direct sponsorship.
-- **[Ko-fi](https://ko-fi.com/TODO_KO_FI_SLUG)** (TODO: replace `TODO_KO_FI_SLUG` with the final Ko-fi handle).
+- **[GitHub Sponsors](https://github.com/sponsors/organvm)**
+- **[Ko-fi](https://ko-fi.com/TODO_KO_FI_SLUG)** — TODO: replace `TODO_KO_FI_SLUG` with the live Ko-fi handle.
 
 ---
 
