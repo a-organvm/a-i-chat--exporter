@@ -1,0 +1,19 @@
+{
+    "name": "@exporter/mint",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "Sovereign licence mint — self-hosted Bitcoin/Lightning cash intake that signs the Exporter's own Pro licences. No Stripe, no Lemon Squeezy, no Ko-fi, no processor.",
+    "scripts": {
+        "start": "tsx src/index.ts",
+        "keygen": "tsx src/keygen.ts",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run && tsc --noEmit"
+    },
+    "devDependencies": {
+        "@types/node": "^22.10.0",
+        "tsx": "^4.19.2",
+        "typescript": "^5.7.2",
+        "vitest": "^2.1.8"
+    }
+}

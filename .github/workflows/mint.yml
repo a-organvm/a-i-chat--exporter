@@ -1,0 +1,37 @@
+name: Mint
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'mint/**'
+      - '.github/workflows/mint.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'mint/**'
+      - '.github/workflows/mint.yml'
+
+jobs:
+  mint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm ci
+
+      - name: Test + typecheck
+        run: npm test
