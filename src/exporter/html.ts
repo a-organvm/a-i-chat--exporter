@@ -272,7 +272,7 @@ function transformContent(
                             const validUrl = assertValidHtmlUrl(msg.image_url, 'execution output image URL')
                             const height = escapeHtmlAttribute(String(msg.height))
                             const width = escapeHtmlAttribute(String(msg.width))
-                            return `<img src=”${validUrl}” height=”${height}” width=”${width}” />`
+                            return `<img src="${validUrl}" height="${height}" width="${width}" />`
                         }
                         catch (error) {
                             if (isValidationError(error)) {
@@ -306,7 +306,7 @@ function transformContent(
                         const validUrl = assertValidHtmlUrl(part.asset_pointer, 'image asset pointer')
                         const height = escapeHtmlAttribute(String(part.height))
                         const width = escapeHtmlAttribute(String(part.width))
-                        return `<img src=”${validUrl}” height=”${height}” width=”${width}” />`
+                        return `<img src="${validUrl}" height="${height}" width="${width}" />`
                     }
                     catch (error) {
                         if (isValidationError(error)) {
@@ -315,7 +315,7 @@ function transformContent(
                         throw error
                     }
                 }
-                if (part.content_type === 'audio_transcription') return `<div style=”font-style: italic; opacity: 0.65;”>”${escapeHtml(part.text)}”</div>`
+                if (part.content_type === 'audio_transcription') return `<div style="font-style: italic; opacity: 0.65;">“${escapeHtml(part.text)}”</div>`
                 if (part.content_type === 'audio_asset_pointer') return null
                 if (part.content_type === 'real_time_user_audio_video_asset_pointer') return null
                 return postProcess('[Unsupported multimodal content]')

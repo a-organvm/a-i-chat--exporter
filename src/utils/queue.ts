@@ -18,13 +18,15 @@ type RequestQueueEvents<T> = {
     progress: ProgressEvent
 }
 
+type QueueStatus = 'IDLE' | 'IN_PROGRESS' | 'STOPPED' | 'COMPLETED'
+
 export class RequestQueue<T> {
     private eventEmitter = EventEmitter<RequestQueueEvents<T>>()
 
     private queue: Array<RequestObject<T>> = []
     private results: T[] = []
 
-    private status: 'IDLE' | 'IN_PROGRESS' | 'STOPPED' | 'COMPLETED' = 'IDLE'
+    private status: QueueStatus = 'IDLE'
 
     private readonly backoffMultiplier = 2
     private backoff: number
@@ -104,7 +106,9 @@ export class RequestQueue<T> {
         }
         catch (error) {
             console.error(`Request ${name} failed:`, error)
-            if (this.status === 'STOPPED') {
+            // `stop()` may have flipped the status during the awaited request; the
+            // cast restores the full union TS narrows away after `IN_PROGRESS`.
+            if ((this.status as QueueStatus) === 'STOPPED') {
                 this.done()
                 return
             }

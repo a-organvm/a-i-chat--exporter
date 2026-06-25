@@ -24,3 +24,11 @@ vi.stubGlobal('window', {
     removeItem: () => {},
   },
 });
+
+// Node < 21 has no global `navigator`; i18n.ts destructures navigator.language at
+// import time, so the whole suite fails to load on the CI Node version without this.
+vi.stubGlobal('navigator', {
+  language: 'en-US',
+  languages: ['en-US'],
+  clipboard: { writeText: () => Promise.resolve() },
+});
