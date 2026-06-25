@@ -15,6 +15,15 @@
 
 **A browser userscript that exports your entire ChatGPT conversation history into portable, archival-quality formats — Markdown, HTML, JSON, PNG, and plain text.**
 
+> ### Work with the builder
+>
+> **The expensive problem this engineering solves:** your organization's most valuable thinking is trapped inside AI chat platforms that ship no real export — ephemeral, unsearchable, un-archivable, impossible to move into your own systems for compliance, search, or model training. Capturing it durably means reverse-engineering an undocumented internal API, linearizing a branching message tree, and rendering it into archival formats — all client-side, with no backend to lean on. That is rare, costly engineering, and it is the whole of this repository.
+>
+> **The proof is this codebase:** a TypeScript / Vite / Preact userscript that authenticates against ChatGPT's internal `/backend-api/`, walks the conversation tree node-by-node, and exports five formats (LaTeX-safe Markdown, self-contained HTML, official-schema JSON, full-thread PNG, clipboard text) across nine localized UIs — behind a fail-closed Pro license gate (`PRO_FEATURES` in [`src/ui/SettingContext.tsx`](./src/ui/SettingContext.tsx)), a rate-limited `RequestQueue` ([`src/utils/queue.ts`](./src/utils/queue.ts)), and a provider layer ([`src/providers/`](./src/providers)) already scaffolded for Claude and Gemini.
+>
+> [**Deploy this for your org →**](mailto:padavano.anthony@gmail.com)  
+> *(Technical recruiter or engineering leader? This repository is the proof-of-work behind the senior-to-principal roles I take. [Work with the team that built this →](mailto:padavano.anthony@gmail.com))*
+
 ChatGPT Exporter lives inside ORGAN-III (Ergon), the commerce and product organ of the [organvm system](https://github.com/meta-organvm). Within the eight-organ model, this tool represents a concrete, publicly distributed product: a piece of software that thousands of people install and use daily. It converts ephemeral AI conversations into durable artifacts — a concern that connects directly to ORGAN-I's epistemological interest in how knowledge gets captured and structured, and to ORGAN-IV's orchestration interest in how tools route information across systems.
 
 ---
