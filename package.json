@@ -40,7 +40,7 @@
     "@radix-ui/react-hover-card": "^1.1.17",
     "hast-util-to-html": "^9.0.5",
     "html2canvas": "^1.4.1",
-    "i18next": "^26.3.1",
+    "i18next": "^26.3.2",
     "jszip": "3.10.1",
     "mdast": "^3.0.0",
     "mdast-util-from-markdown": "^2.0.3",
@@ -60,8 +60,8 @@
     "vite-plugin-monkey": "^8.0.6"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.0.2",
-    "@commitlint/config-conventional": "^21.0.2",
+    "@commitlint/cli": "^21.1.0",
+    "@commitlint/config-conventional": "^21.1.0",
     "@eslint/js": "^10.0.1",
     "@preact/preset-vite": "^2.10.5",
     "@types/katex": "^0.16.8",
@@ -72,11 +72,11 @@
     "globals": "^17.6.0",
     "husky": "^9.1.7",
     "katex": "^0.17.0",
-    "lint-staged": "^17.0.7",
+    "lint-staged": "^17.0.8",
     "react": "^19.2.7",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.61.1",
-    "vite": "^8.0.16",
+    "vite": "^8.1.0",
     "vitest": "4.1.9"
   },
   "lint-staged": {
