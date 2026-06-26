@@ -50,25 +50,13 @@ function redactUrl(url: string): string {
     }
 }
 
+type JsonPrimitive = string | number | boolean | null
+type JsonObject = { [key: string]: JsonValue }
+type JsonValue = JsonPrimitive | JsonObject | JsonValue[]
+type UnknownRecord = Record<string, unknown>
+
 interface ApiSession {
     accessToken: string
-    authProvider: string
-    expires: string
-    user: {
-        email: string
-        groups: string[]
-        // token's issued_at timestamp
-        iat: number
-        id: string
-        // token's expiration timestamp
-        idp: string
-        image: string
-        intercom_hash: string
-        // whether the user has multi-factor authentication enabled
-        mfa: boolean
-        name: string
-        picture: string
-    }
 }
 
 type ModelSlug =
@@ -111,7 +99,7 @@ interface MessageMeta {
         code: string
         final_expression_output?: string
         end_time: number
-        jupyter_messages: unknown[]
+        jupyter_messages: JsonValue[]
         messages: Array<{
             image_url: string
             message_type: 'image'
@@ -125,7 +113,7 @@ interface MessageMeta {
         status: 'success' | 'error' & (string & {})
         update_time: number
     }
-    args?: unknown
+    args?: JsonValue
     command?: 'click' | 'search' | 'quote' | 'quote_lines' | 'scroll' & (string & {})
     finish_details?: {
         // stop: string
@@ -179,7 +167,7 @@ interface MultiModalInputAudio {
 interface MultiModalAudioVideoAssetPointer {
     content_type: 'real_time_user_audio_video_asset_pointer'
     expiry_datetime: string
-    frames_asset_pointers: unknown[]
+    frames_asset_pointers: JsonValue[]
     video_container_asset_pointer: null
     audio_asset_pointer: {
         expiry_datetime: string
@@ -213,7 +201,7 @@ export interface ConversationNodeMessage {
     author: {
         role: AuthorRole
         name?: 'browser' | 'python' & (string & {})
-        metadata: unknown
+        metadata: JsonValue
     }
     content: {
         // chat response
@@ -277,7 +265,7 @@ export interface ApiConversation {
     conversation_id?: string
     current_node: string
     mapping: ConversationMapping
-    moderation_results: unknown[]
+    moderation_results: JsonValue[]
     title: string
     is_archived: boolean
     update_time: number
@@ -326,43 +314,14 @@ interface ApiProjectConversationsResponse {
     cursor?: number | null
 }
 
-interface ApiAccountsCheckAccountDetail {
-    account_user_role: 'account-owner' | string
-    account_user_id: string | null
-    processor: Record<string, boolean>
-    account_id: string | null
-    organization_id?: string | null
-    is_most_recent_expired_subscription_gratis: boolean
-    has_previously_paid_subscription: boolean
-    name?: string | null
-    profile_picture_id?: string | null
-    profile_picture_url?: string | null
-    structure: 'workspace' | 'personal'
-    plan_type: 'team' | 'free'
-    is_deactivated: boolean
-    promo_data: Record<string, unknown>
-}
-
-interface ApiAccountsCheckEntitlement {
-    subscription_id?: string | null
-    has_active_subscription?: boolean
-    subscription_plan?: 'chatgptteamplan' | 'chatgptplusplan'
-    expires_at?: string | null
-    billing_period?: 'monthly' | string | null
-}
-
 interface ApiAccountsCheckAccount {
-    account: ApiAccountsCheckAccountDetail
-    features: string[]
-    entitlement: ApiAccountsCheckEntitlement
-    last_active_subscription?: Record<string, unknown> | null
-    is_eligible_for_yearly_plus_subscription: boolean
+    account: {
+        account_id: string | null
+    }
 }
 
 interface ApiAccountsCheck {
-    accounts: {
-        [key: string]: ApiAccountsCheckAccount
-    }
+    accounts: Record<string, ApiAccountsCheckAccount>
     account_ordering: string[]
 }
 
@@ -370,7 +329,7 @@ type ApiFileDownload = {
     status: 'success'
     /** signed download url */
     download_url: string
-    metadata: Record<string, unknown>
+    metadata: JsonObject
     file_name: string
     /** iso8601 datetime string */
     creation_time: string
@@ -380,7 +339,6 @@ type ApiFileDownload = {
     error_message: string | null
 }
 
-// eslint-disable-next-line no-restricted-syntax
 const enum ChatGPTCookie {
     AgeVerification = 'oai-av-seen',
     AllowNonessential = 'oai-allow-ne',
@@ -429,7 +387,7 @@ export async function getCurrentChatId(): Promise<string> {
 
 async function fetchImageFromPointer(uri: string): Promise<string | null> {
     const pointer = uri.replace('file-service://', '')
-    const imageDetails = await fetchApi<ApiFileDownload>(fileDownloadApi(pointer), undefined, isApiFileDownload)
+    const imageDetails = await fetchApi(fileDownloadApi(pointer), isApiFileDownload)
     if (imageDetails.status === 'error') {
         logger.error('Failed to fetch image asset', {
             errorCode: imageDetails.error_code,
@@ -445,8 +403,28 @@ async function fetchImageFromPointer(uri: string): Promise<string | null> {
     return base64.replace(/^data:.*?;/, `data:${contentType};`)
 }
 
-function isRecord(value: unknown): value is Record<PropertyKey, unknown> {
+function isRecord(value: unknown): value is UnknownRecord {
     return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isJsonValue(value: unknown): value is JsonValue {
+    if (value === null) return true
+
+    switch (typeof value) {
+        case 'string':
+        case 'number':
+        case 'boolean':
+            return true
+        case 'object':
+            if (Array.isArray(value)) return value.every(isJsonValue)
+            return isJsonObject(value)
+        default:
+            return false
+    }
+}
+
+function isJsonObject(value: unknown): value is JsonObject {
+    return isRecord(value) && Object.values(value).every(isJsonValue)
 }
 
 function isFileServiceImageAssetPointer(part: unknown): part is MultiModalInputImage {
@@ -469,7 +447,7 @@ function isApiFileDownload(value: unknown): value is ApiFileDownload {
     if (value.status === 'success') {
         return typeof value.download_url === 'string'
             && typeof value.file_name === 'string'
-            && isRecord(value.metadata)
+            && isJsonObject(value.metadata)
             && isNonEmptyString(value.creation_time)
     }
     if (value.status === 'error') {
@@ -534,28 +512,26 @@ function isApiGizmo(value: unknown): value is ApiGizmo {
 function isApiSession(value: unknown): value is ApiSession {
     return isRecord(value)
         && typeof value.accessToken === 'string'
-        && typeof value.authProvider === 'string'
-        && typeof value.expires === 'string'
-        && isRecord(value.user)
-        && typeof value.user.email === 'string'
-        && isStringArray(value.user.groups)
-        && typeof value.user.iat === 'number'
-        && typeof value.user.id === 'string'
-        && typeof value.user.idp === 'string'
-        && typeof value.user.image === 'string'
-        && typeof value.user.intercom_hash === 'string'
-        && typeof value.user.mfa === 'boolean'
-        && typeof value.user.name === 'string'
-        && typeof value.user.picture === 'string'
+}
+
+function isApiAccountsCheckAccount(value: unknown): value is ApiAccountsCheckAccount {
+    return isRecord(value)
+        && isRecord(value.account)
+        && (value.account.account_id === null || typeof value.account.account_id === 'string')
 }
 
 function isApiAccountsCheck(value: unknown): value is ApiAccountsCheck {
     return isRecord(value)
         && isRecord(value.accounts)
+        && Object.values(value.accounts).every(isApiAccountsCheckAccount)
         && isStringArray(value.account_ordering)
 }
 
-function isApiSuccessResponse(value: unknown): value is { success: boolean } {
+type ApiSuccessResponse = {
+    success: boolean
+}
+
+function isApiSuccessResponse(value: unknown): value is ApiSuccessResponse {
     return isRecord(value) && typeof value.success === 'boolean'
 }
 
@@ -621,7 +597,7 @@ export async function fetchConversation(chatId: string, shouldReplaceAssets: boo
     }
 
     const url = conversationApi(validChatId)
-    const conversation = await fetchApi<ApiConversation>(url, undefined, isApiConversation)
+    const conversation = await fetchApi(url, isApiConversation)
 
     if (shouldReplaceAssets) {
         await replaceImageAssets(conversation)
@@ -637,7 +613,7 @@ export async function fetchProjects(): Promise<ApiProjectInfo[]> {
     await requireExporterApiAuth()
 
     const url = projectsApi()
-    const { items } = await fetchApi<ApiProjectsResponse>(url, undefined, isApiProjectsResponse)
+    const { items } = await fetchApi(url, isApiProjectsResponse)
     return items.map(gizmo => (gizmo.gizmo.gizmo))
 }
 
@@ -647,14 +623,14 @@ async function fetchConversations(offset = 0, limit = 20, project: string | null
     }
     assertValidPagination(offset, limit)
     const url = conversationsApi(offset, limit)
-    return fetchApi<ApiConversations>(url, undefined, isApiConversations)
+    return fetchApi(url, isApiConversations)
 }
 
 async function fetchProjectConversations(project: string, offset = 0, limit = 20): Promise<ApiConversations> {
     assertValidChatId(project, 'project')
     assertValidPagination(offset, limit)
     const url = projectConversationsApi(project, offset, limit)
-    const { items } = await fetchApi<ApiProjectConversationsResponse>(url, undefined, isApiProjectConversations)
+    const { items } = await fetchApi(url, isApiProjectConversations)
     return {
         has_missing_conversations: false,
         items,
@@ -704,11 +680,11 @@ export async function archiveConversation(chatId: string): Promise<boolean> {
     await requireExporterApiAuth()
 
     const url = conversationApi(assertValidChatId(chatId))
-    const { success } = await fetchApi<{ success: boolean }>(url, {
+    const { success } = await fetchApi(url, isApiSuccessResponse, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_archived: true }),
-    }, isApiSuccessResponse)
+    })
     return success
 }
 
@@ -716,11 +692,11 @@ export async function deleteConversation(chatId: string): Promise<boolean> {
     await requireExporterApiAuth()
 
     const url = conversationApi(assertValidChatId(chatId))
-    const { success } = await fetchApi<{ success: boolean }>(url, {
+    const { success } = await fetchApi(url, isApiSuccessResponse, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_visible: false }),
-    }, isApiSuccessResponse)
+    })
     return success
 }
 
@@ -728,8 +704,8 @@ type ApiResponseValidator<T> = (value: unknown) => value is T
 
 async function fetchApi<T>(
     url: string,
+    validate: ApiResponseValidator<T>,
     options?: RequestInit,
-    validate?: ApiResponseValidator<T>,
 ): Promise<T> {
     await requireExporterApiAuth()
 
@@ -774,8 +750,8 @@ async function fetchApi<T>(
     }
 
     try {
-        const payload = await response.json()
-        if (validate && !validate(payload)) {
+        const payload: unknown = await response.json()
+        if (!validate(payload)) {
             logger.error('API response had unexpected shape', { method, url: safeUrl })
             throw new ApiError('API response had an unexpected shape.', {
                 status: response.status,
@@ -784,7 +760,7 @@ async function fetchApi<T>(
                 method,
             })
         }
-        return payload as T
+        return payload
     }
     catch (error) {
         if (error instanceof ApiError) {
@@ -807,7 +783,7 @@ async function parseResponsePayload<T>(
     method = 'GET',
 ): Promise<T> {
     try {
-        const payload = await response.json()
+        const payload: unknown = await response.json()
         if (!validate(payload)) {
             logger.error('Response payload failed schema check', {
                 label,
