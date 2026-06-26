@@ -125,7 +125,6 @@ Pro features in place after verification.
 
 If ChatGPT Exporter helps you, you can support ongoing maintenance via:
 - **[GitHub Sponsors](https://github.com/sponsors/organvm)** (sponsor profile: `organvm`)
-- **[Ko-fi](https://ko-fi.com/TODO_KO_FI_SLUG)** — **TODO: replace `TODO_KO_FI_SLUG` with the final Ko-fi handle.**
 
 ---
 
@@ -247,10 +246,10 @@ Copies the conversation to your clipboard as plain text. Markdown formatting is 
 
 ## Usage
 
-This repository builds a browser userscript. The runtime entrypoint is
-[`src/main.tsx`](./src/main.tsx), and the distributable userscript is
-`dist/chatgpt.user.js`. The package is marked private and does not define an
-npm `bin`, `main`, `module`, or `exports` API.
+This repository builds one browser userscript. The runtime entrypoint is
+[`src/main.tsx`](./src/main.tsx), and Vite emits the installable file as
+`dist/chatgpt.user.js`. The package is private and does not expose an npm
+`bin`, `main`, `module`, or `exports` API.
 
 ### Install the userscript
 
@@ -260,7 +259,7 @@ published userscript files:
 | Source | Link |
 |--------|------|
 | GreasyFork | [Install from GreasyFork](https://greasyfork.org/scripts/456055-chatgpt-exporter) |
-| GitHub raw userscript | [Install `dist/chatgpt.user.js`](https://raw.githubusercontent.com/organvm-iii-ergon/a-i-chat--exporter/master/dist/chatgpt.user.js) |
+| GitHub raw userscript | [Install `dist/chatgpt.user.js`](https://raw.githubusercontent.com/organvm/a-i-chat--exporter/master/dist/chatgpt.user.js) |
 
 The userscript metadata in [`vite.config.ts`](./vite.config.ts) matches these
 hosts: `chatgpt.com`, `chat.openai.com`, and `new.oaifree.com`. It runs on the
@@ -270,17 +269,21 @@ root page, `?model=*`, `/c/*`, `/g/*`, `/gpts`, `/gpts/*`, `/share/*`, and
 ### Run it in ChatGPT
 
 After installation, open a supported ChatGPT page. The script injects an
-**Export** menu into the sidebar. On share pages it injects the same menu above
-the shared conversation content. If ChatGPT history is disabled, the injected
-menu shows **Chat History disabled** and the export actions are not available.
+**Export** menu into the sidebar. On share pages, it injects the same menu above
+the shared conversation content. If ChatGPT history is disabled in browser
+storage, the injected menu shows **Chat History disabled** and export actions
+are not available.
 
-API-backed actions require the local **API Auth** gate first:
+Actions that call `src/api.ts` require the local **API Auth** gate first. This
+includes Copy Text, Markdown, HTML, JSON, Export All, archive/delete, project
+loading, and timestamp injection. Screenshot export reads the current page DOM
+and does not call the backend API.
 
 1. Open **Export** -> **Exporter Settings**.
-2. In **API Auth**, click **Issue API key**.
-3. Keep the issued key if you need to unlock again later. The plaintext key is
-   shown by the UI, while the script stores only a SHA-256 digest in
-   Tampermonkey storage.
+2. In **API Auth**, click **Issue API Key**.
+3. Keep the issued key if you need to unlock again later. The UI shows the
+   plaintext key once, while the script stores a SHA-256 digest in Tampermonkey
+   storage.
 4. If the current tab is locked later, paste the key into **API Auth** and click
    **Unlock**. **Revoke** removes the stored digest and session authorization.
 
@@ -292,7 +295,7 @@ a conversation must be started first.
 | Menu action | Actual behavior |
 |-------------|-----------------|
 | **Copy Text** | Fetches the current conversation, converts messages to plain text, and copies the result to the clipboard. Images become `[image]` placeholders. |
-| **Screenshot** | Captures the conversation thread DOM with `html2canvas` and downloads a `.png`. It does not call the backend API. Very large conversations can hit browser canvas limits and fail. |
+| **Screenshot** | Captures the conversation thread DOM with `html2canvas` and downloads a `.png`. Very large conversations can hit browser canvas limits and fail. |
 | **Markdown** | Fetches the current conversation and downloads a `.md` file. Optional metadata and Markdown timestamps come from settings. |
 | **HTML** | Fetches the current conversation and downloads a self-contained `.html` file using `src/template.html`. Optional metadata and HTML timestamps come from settings. |
 | **JSON** -> **OpenAI Official Format** | Fetches the current conversation and downloads a `.json` file containing an array with the raw conversation response. |
@@ -301,7 +304,7 @@ a conversation must be started first.
 
 The default filename format is `ChatGPT-{title}`. File naming replaces
 `{title}`, `{date}`, `{timestamp}`, `{chat_id}`, `{create_time}`, and
-`{update_time}`; the title is sanitized and spaces become underscores.
+`{update_time}`. The title is sanitized and spaces become underscores.
 
 ### Export All
 
@@ -321,8 +324,8 @@ choose one output type:
 
 The dialog uses a `RequestQueue` with 200 ms spacing and 1600 ms backoff for
 conversation fetches, archive requests, and delete requests. **Archive** and
-**Delete** are available only for API-loaded conversations and ask for browser
-confirmation before sending the request.
+**Delete** are available only for API-loaded conversations, and each asks for
+browser confirmation before sending the request.
 
 The upload button imports an official `conversations.json`-style file only when
 the JSON parses as an array. In the current UI it is also gated by the
@@ -339,7 +342,7 @@ settings:
 |---------|-----------------|
 | **Language** | Selects one of the locales in `src/i18n.ts`; the value is stored as `exporter:language`. |
 | **File Name** | Edits the filename template. Default: `ChatGPT-{title}`. |
-| **Export All Limit** | Controls the maximum conversations fetched by Export All. Default: `1000`; slider range: `100` to `1000` in steps of `100`. |
+| **Export All Limit** | Controls the maximum conversations fetched by Export All. Default: `1000`; slider range: `100` to `20000` in steps of `100`. |
 | **Pro License** | Stores the license key as `exporter:pro_license_key` and verifies it with the license helpers. **Buy Pro** is enabled only when checkout is configured at build time via `LEMONSQUEEZY_STORE_ID` (or `VITE_LEMONSQUEEZY_STORE_ID`). |
 | **API Auth** | Issues, unlocks, and revokes the local API gate required before backend API calls run. |
 | **Conversation Timestamp** | Injects per-message timestamps into the ChatGPT page when enabled. Optional sub-toggles enable 24-hour display, HTML export timestamps, and Markdown export timestamps. |
@@ -353,7 +356,7 @@ HTML metadata values support: `{title}`, `{date}`, `{timestamp}`,
 ### Development commands
 
 Use Node.js `>=20.0.0` and pnpm `8.14.1` as declared in
-[`package.json`](./package.json).
+[`package.json`](./package.json):
 
 ```bash
 pnpm install
@@ -364,7 +367,7 @@ pnpm lint
 pnpm lint:fix
 ```
 
-The scripts are:
+The package scripts are:
 
 | Command | Actual script |
 |---------|---------------|
@@ -384,12 +387,12 @@ The scripts are:
 The static-site helper has one flag:
 
 ```bash
-node scripts/build-site.mjs          # build only if dist/chatgpt.user.js is missing, then assemble dist-site/
-node scripts/build-site.mjs --build  # always run pnpm run build first, then assemble dist-site/
+node scripts/build-site.mjs         # build only if dist/chatgpt.user.js is missing, then assemble dist-site/
+node scripts/build-site.mjs --build # always run pnpm run build first, then assemble dist-site/
 ```
 
-Set `LEMONSQUEEZY_STORE_ID` (or `VITE_LEMONSQUEEZY_STORE_ID`) at build time to enable the in-app **Buy Pro**
-button:
+Set `LEMONSQUEEZY_STORE_ID` or `VITE_LEMONSQUEEZY_STORE_ID` at build time to
+enable the in-app **Buy Pro** button:
 
 ```bash
 LEMONSQUEEZY_STORE_ID="https://your-store.lemonsqueezy.com/buy/..." pnpm build
