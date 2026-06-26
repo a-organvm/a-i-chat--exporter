@@ -9,9 +9,10 @@ import { exportToMarkdown } from '../exporter/markdown'
 import { exportToText } from '../exporter/text'
 import { useWindowResize } from '../hooks/useWindowResize'
 import { getHistoryDisabled } from '../page'
+import { LEMON_SQUEEZY_CHECKOUT_URL, openProCheckout } from '../utils/license'
 import { Divider } from './Divider'
 import { ExportDialog } from './ExportDialog'
-import { FileCode, IconArrowRightFromBracket, IconCamera, IconCopy, IconJSON, IconMarkdown, IconSetting, IconZip } from './Icons'
+import { FileCode, IconArrowRightFromBracket, IconCamera, IconCopy, IconCreditCard, IconJSON, IconMarkdown, IconSetting, IconZip } from './Icons'
 import { MenuItem } from './MenuItem'
 import { PRO_FEATURES, SettingProvider, useSettingContext } from './SettingContext'
 import { SettingDialog } from './SettingDialog'
@@ -85,6 +86,7 @@ function MenuInner({ container }: { container: HTMLDivElement }) {
     const width = useWindowResize(() => window.innerWidth)
     const isMobile = width < 768
     const Portal = isMobile ? 'div' : HoverCard.Portal
+    const checkoutEnabled = LEMON_SQUEEZY_CHECKOUT_URL.trim().length > 0
 
     if (disabled) {
         return (
@@ -155,6 +157,17 @@ function MenuInner({ container }: { container: HTMLDivElement }) {
                                 <MenuItem text={t('Setting')} icon={IconSetting} />
                             </div>
                         </SettingDialog>
+
+                        {!isPro && (
+                            <MenuItem
+                                text={t('Buy Pro')}
+                                icon={IconCreditCard}
+                                className="row-full"
+                                disabled={!checkoutEnabled}
+                                title={checkoutEnabled ? undefined : t('Checkout Not Configured')}
+                                onClick={onClickBuyPro}
+                            />
+                        )}
 
                         <MenuItem
                             text={t('Copy Text')}

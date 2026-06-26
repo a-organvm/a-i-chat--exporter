@@ -343,6 +343,58 @@ export const SettingDialog: FC<SettingDialogProps> = ({
                         <div className="relative flex bg-white dark:bg-white/5 rounded p-4">
                             <div>
                                 <dt className="text-md font-medium text-gray-800 dark:text-white">
+                                    {t('Pro License')}
+                                </dt>
+                                <dd className="text-sm text-gray-700 dark:text-gray-300">
+                                    {t('Pro License Description')}
+                                    <div className="mt-3 flex items-center gap-2">
+                                        <span className={`rounded px-2 py-1 text-xs font-medium ${isPro ? 'bg-[#ddf3e4] text-[#18794e]' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200'}`}>
+                                            {isPro ? t('Pro Active') : t('Free Tier Active')}
+                                        </span>
+                                        {isPro && (
+                                            <span className="select-all text-xs text-gray-600 dark:text-gray-400">
+                                                {maskLicense(license)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <input
+                                        className="Input mt-3"
+                                        type="password"
+                                        value={license}
+                                        placeholder={t('License Key')}
+                                        aria-label={t('License Key')}
+                                        onChange={e => setLicense(e.currentTarget.value.trim())}
+                                    />
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        <button
+                                            className="Button green font-bold"
+                                            type="button"
+                                            disabled={!checkoutEnabled}
+                                            title={checkoutEnabled ? undefined : t('Checkout Not Configured')}
+                                            onClick={() => openProCheckout()}
+                                        >
+                                            {t('Buy Pro')}
+                                        </button>
+                                        <button
+                                            className="Button red font-bold"
+                                            type="button"
+                                            disabled={!license}
+                                            onClick={() => setLicense('')}
+                                        >
+                                            {t('Clear License')}
+                                        </button>
+                                    </div>
+                                    {!checkoutEnabled && (
+                                        <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                                            {t('Checkout Not Configured')}
+                                        </p>
+                                    )}
+                                </dd>
+                            </div>
+                        </div>
+                        <div className="relative flex bg-white dark:bg-white/5 rounded p-4">
+                            <div>
+                                <dt className="text-md font-medium text-gray-800 dark:text-white">
                                     {t('Export Metadata')}
                                 </dt>
                                 <dd className="text-sm text-gray-700 dark:text-gray-300">

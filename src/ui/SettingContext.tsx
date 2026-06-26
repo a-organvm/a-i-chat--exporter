@@ -3,6 +3,7 @@ import { useCallback, useMemo } from 'preact/hooks'
 import {
     KEY_EXPORT_ALL_LIMIT,
     KEY_FILENAME_FORMAT,
+    KEY_LICENSE,
     KEY_META_ENABLED,
     KEY_META_LIST,
     KEY_TIMESTAMP_24H,
@@ -143,6 +144,16 @@ export const SettingProvider: FC = ({ children }) => {
 
     const [exportMetaList, setExportMetaList] = useGMStorage(KEY_META_LIST, defaultExportMetaList)
     const [exportAllLimit, setExportAllLimit] = useGMStorage(KEY_EXPORT_ALL_LIMIT, defaultExportAllLimit)
+    const [license, setLicense] = useGMStorage(KEY_LICENSE, '')
+    const isPro = useMemo(() => license.trim().length > 0, [license])
+
+    useEffect(() => {
+        const licenseFromUrl = getLicenseFromUrl()
+        if (!licenseFromUrl) return
+
+        setLicense(licenseFromUrl)
+        scrubLicenseReturnUrl()
+    }, [])
 
     const { licenseKey, setLicenseKey, status: licenseStatus, verifying: licenseVerifying } = useLicense()
 
