@@ -1,5 +1,15 @@
 # ChatGPT Exporter — Launch Post (Build in Public)
 
+## BEFORE POSTING — Checklist
+
+- [ ] `LEMONSQUEEZY_STORE_ID` configured and build deployed (required for in-app **Buy Pro** button to appear)
+- [ ] Pro price defined and added to the response templates below ("How much does Pro cost?")
+- [ ] GreasyFork listing updated to match v2.29.1
+- [ ] GitHub Sponsors profile (`organvm`) is live and linked
+- [ ] Verify GreasyFork ranking claim is still current before posting
+
+---
+
 ## Show HN
 
 **Title:** Show HN: ChatGPT Exporter – Markdown, HTML, JSON, PNG Export for ChatGPT Conversations
@@ -34,7 +44,7 @@ ChatGPT Exporter is a browser userscript that adds a five-format export menu to 
   - Conversation management: archive or delete multiple conversations via the API
 
 **Technical details:**
-- Built in TypeScript + Preact, compiled to a single ~50KB userscript.
+- Built in TypeScript + Preact, compiled to a single userscript file (external heavy dependencies — jszip, html2canvas — loaded from jsDelivr CDN at runtime).
 - Markdown exporter uses mdast AST normalization to preserve LaTeX and convert ChatGPT’s custom footnote syntax to markdown footnotes.
 - Bulk export uses a smart rate-limited request queue (200ms/1600ms backoff) to avoid throttling ChatGPT’s API.
 - Extensible provider architecture scaffolds Claude and Gemini support (deferred — foundation-only today).
@@ -53,7 +63,7 @@ ChatGPT Exporter is a browser userscript that adds a five-format export menu to 
 
 **Title:** ChatGPT Exporter: Open-Source Browser Userscript for Markdown/HTML/JSON/PNG Export
 
-I’ve been maintaining ChatGPT Exporter for the past year and just crossed into production-ready. It’s a browser userscript that fills a gap: OpenAI doesn’t export conversations to Markdown or HTML, and researchers/writers/developers regularly need to archive conversations for reference or ingestion into knowledge systems.
+I maintain a fork of ChatGPT Exporter (originally open-sourced by pionxzh in 2022) and just crossed into production-ready. It’s a browser userscript that fills a gap: OpenAI doesn’t export conversations to Markdown or HTML, and researchers/writers/developers regularly need to archive conversations for reference or ingestion into knowledge systems.
 
 **What it actually does:**
 
@@ -79,7 +89,7 @@ Pro tier ($): for people who export at scale:
 
 **Real context:**
 
-- Built in TypeScript + Preact. Single userscript file (~50KB).
+- Built in TypeScript + Preact. Single userscript file (heavy deps loaded from CDN at runtime).
 - Distributed primarily via GreasyFork (one of the highest-traffic ChatGPT utility scripts there).
 - Localized in 9 languages.
 - Open source (MIT). Active maintenance, no abandoned features.
@@ -119,7 +129,7 @@ Free for single conversations. Pro ($) unlocks bulk export.
 https://greasyfork.org/scripts/456055-chatgpt-exporter
 
 ### Variant 4: Maker story (thread starter)
-I spent a year building ChatGPT Exporter, a browser userscript that does one thing well: export ChatGPT conversations to portable formats.
+I've been building ChatGPT Exporter — a fork of the original open-source project — into a production-ready browser userscript that does one thing well: export ChatGPT conversations to portable formats.
 
 The problem is simple: ChatGPT conversations are ephemeral. OpenAI doesn't export to Markdown or HTML. Researchers, writers, developers need archival snapshots.
 
@@ -170,7 +180,7 @@ Repo: https://github.com/organvm-iii-ergon/a-i-chat--exporter
 For common questions:
 
 **"How much does Pro cost?"**
-[Not specified in launch post — define in checkout or settings]
+[FILL IN BEFORE POSTING — set price in Lemon Squeezy, then add: "Pro is $X/month (or $Y one-time). Unlocks bulk export, JSON import, and format conversion."]
 
 **"Is Pro required?"**
 No. Free tier exports any open conversation in all five formats with no limitations. Pro is for people who export hundreds of conversations at once or need bulk workflows.
