@@ -27,7 +27,6 @@ export const SettingDialog: FC<SettingDialogProps> = ({
     children,
 }) => {
     const {
-        /* eslint-disable pionxzh/consistent-list-newline */
         format, setFormat,
         enableTimestamp, setEnableTimestamp,
         timeStamp24H, setTimeStamp24H,
@@ -36,7 +35,6 @@ export const SettingDialog: FC<SettingDialogProps> = ({
         enableMeta, setEnableMeta,
         exportMetaList, setExportMetaList,
         exportAllLimit, setExportAllLimit,
-        /* eslint-enable pionxzh/consistent-list-newline */
     } = useSettingContext()
     const { t, i18n } = useTranslation()
     const _title = useTitle()
@@ -210,7 +208,6 @@ export const SettingDialog: FC<SettingDialogProps> = ({
                                                 ,{' '}
                                                 <Variable name="{update_time}" title="2023-04-10T21:45:35.027Z" />
                                             </p>
-                                            {/* eslint-disable-next-line pionxzh/consistent-list-newline */}
                                             {exportMetaList.map((meta, i) => (
                                                 <div className="flex items-center mt-2" key={i}>
                                                     <input
