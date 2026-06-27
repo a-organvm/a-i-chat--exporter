@@ -51,7 +51,7 @@ pnpm run preview:site       # build + serve at http://localhost:8080
 ### Pro checkout configuration
 
 Set `LEMONSQUEEZY_STORE_ID` (or `VITE_LEMONSQUEEZY_STORE_ID`) at build time to enable the in-app **Buy Pro**
-button.
+button and the landing-page **Buy Pro** CTA.
 
 `LEMONSQUEEZY_STORE_ID` (or `VITE_LEMONSQUEEZY_STORE_ID`) can be either:
 

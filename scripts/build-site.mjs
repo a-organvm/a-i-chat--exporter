@@ -23,9 +23,23 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const userscript = join(root, 'dist', 'chatgpt.user.js')
 const outDir = join(root, 'dist-site')
 const forceBuild = process.argv.includes('--build')
+const proCheckoutUrl = normalizeCheckoutInputUrl(
+  process.env.LEMONSQUEEZY_STORE_ID
+  || process.env.VITE_LEMONSQUEEZY_STORE_ID
+  || process.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL
+  || '',
+)
 
 function log(msg) {
   process.stdout.write(`[build-site] ${msg}\n`)
+}
+
+function normalizeCheckoutInputUrl(value) {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  return `https://${trimmed}`
 }
 
 if (forceBuild || !existsSync(userscript)) {
@@ -48,6 +62,7 @@ const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
 const html = readFileSync(join(root, 'site', 'index.html'), 'utf8')
   .replaceAll('__VERSION__', pkg.version)
   .replaceAll('__BUILT_AT__', new Date().toISOString().slice(0, 10))
+  .replaceAll('__PRO_CHECKOUT_URL__', proCheckoutUrl || '#support')
 writeFileSync(join(outDir, 'index.html'), html)
 
 // Cloudflare Pages headers — serve the userscript as JS so managers detect it.
