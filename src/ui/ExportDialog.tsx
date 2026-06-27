@@ -12,6 +12,7 @@ import { PRO_FEATURES, useSettingContext } from './SettingContext'
 import type { ApiConversationItem, ApiConversationWithId, ApiProjectInfo } from '../api'
 import type { FC } from '../type'
 import type { ChangeEvent } from 'preact/compat'
+import type { ExportMeta } from './SettingContext'
 
 interface ProjectSelectProps {
     projects: ApiProjectInfo[]
@@ -102,6 +103,110 @@ const ConversationSelect: FC<ConversationSelectProps> = ({
 
 type ExportSource = 'API' | 'Local'
 
+export type ExportAllCallback = (
+    fileNameFormat: string,
+    conversations: ApiConversationWithId[],
+    metaList?: ExportMeta[],
+) => unknown
+
+export interface ExportAllOption {
+    label: string
+    callback: ExportAllCallback
+}
+
+export const EXPORT_ALL_OPTIONS = [
+    { label: 'Markdown', callback: exportAllToMarkdown },
+    { label: 'HTML', callback: exportAllToHtml },
+    { label: 'JSON', callback: exportAllToOfficialJson },
+    { label: 'JSON (ZIP)', callback: exportAllToJson },
+] satisfies readonly ExportAllOption[]
+
+interface BulkExportDisabledState {
+    bulkExportAllowed: boolean
+    loading: boolean
+    processing: boolean
+    error: string
+    selectedCount: number
+}
+
+export function isBulkExportDisabled({
+    bulkExportAllowed,
+    loading,
+    processing,
+    error,
+    selectedCount,
+}: BulkExportDisabledState) {
+    return !bulkExportAllowed || loading || processing || !!error || selectedCount === 0
+}
+
+export function findExportAllOption(
+    exportType: string,
+    options: readonly ExportAllOption[] = EXPORT_ALL_OPTIONS,
+) {
+    return options.find(o => o.label === exportType)
+}
+
+export function parseLocalConversationsUpload(fileContents: string) {
+    const data: unknown = JSON.parse(fileContents)
+    return Array.isArray(data) ? data as ApiConversationWithId[] : null
+}
+
+export function getSelectedLocalConversations(
+    localConversations: ApiConversationWithId[],
+    selected: ApiConversationItem[],
+) {
+    const selectedIds = new Set(selected.map(c => c.id))
+    return localConversations.filter(c => selectedIds.has(c.id))
+}
+
+export function shouldFetchConversationWithHistory(exportType: string) {
+    return exportType !== 'JSON'
+}
+
+type FetchConversationForExport = (
+    id: string,
+    shouldReplaceAssets: boolean,
+) => Promise<ApiConversationWithId>
+
+export function createApiExportRequests(
+    selected: ApiConversationItem[],
+    exportType: string,
+    fetchConversationForExport: FetchConversationForExport = fetchConversation,
+) {
+    return selected.map(({ id, title }) => ({
+        name: title,
+        request: () => fetchConversationForExport(id, shouldFetchConversationWithHistory(exportType)),
+    }))
+}
+
+interface ExportSelectedLocalConversationsInput {
+    disabled: boolean
+    localConversations: ApiConversationWithId[]
+    selected: ApiConversationItem[]
+    exportType: string
+    format: string
+    metaList: ExportMeta[]
+    exportOptions?: readonly ExportAllOption[]
+}
+
+export function exportSelectedLocalConversations({
+    disabled,
+    localConversations,
+    selected,
+    exportType,
+    format,
+    metaList,
+    exportOptions = EXPORT_ALL_OPTIONS,
+}: ExportSelectedLocalConversationsInput) {
+    if (disabled) return false
+
+    const callback = findExportAllOption(exportType, exportOptions)?.callback
+    if (!callback) return false
+
+    callback(format, getSelectedLocalConversations(localConversations, selected), metaList)
+    return true
+}
+
 interface DialogContentProps {
     format: string
 }
@@ -119,13 +224,6 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
         [checkProFeature],
     )
 
-    const exportAllOptions = useMemo(() => [
-        { label: 'Markdown', callback: exportAllToMarkdown },
-        { label: 'HTML', callback: exportAllToHtml },
-        { label: 'JSON', callback: exportAllToOfficialJson },
-        { label: 'JSON (ZIP)', callback: exportAllToJson },
-    ], [])
-
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [exportSource, setExportSource] = useState<ExportSource>('API')
     const [apiConversations, setApiConversations] = useState<ApiConversationItem[]>([])
@@ -138,8 +236,14 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
     const [selectedProject, setSelectedProject] = useState<ApiProjectInfo | null>(null)
 
     const [selected, setSelected] = useState<ApiConversationItem[]>([])
-    const [exportType, setExportType] = useState(exportAllOptions[0].label)
-    const disabled = !bulkExportGate.allowed || loading || processing || !!error || selected.length === 0
+    const [exportType, setExportType] = useState(EXPORT_ALL_OPTIONS[0].label)
+    const disabled = isBulkExportDisabled({
+        bulkExportAllowed: bulkExportGate.allowed,
+        loading,
+        processing,
+        error,
+        selectedCount: selected.length,
+    })
 
     const requestQueue = useMemo(() => new RequestQueue<ApiConversationWithId>(200, 1600), [])
     const archiveQueue = useMemo(() => new RequestQueue<boolean>(200, 1600), [])
@@ -162,8 +266,8 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
 
         const fileReader = new FileReader()
         fileReader.onload = () => {
-            const data = JSON.parse(fileReader.result as string)
-            if (!Array.isArray(data)) {
+            const data = parseLocalConversationsUpload(fileReader.result as string)
+            if (!data) {
                 alert(t('Invalid File Format'))
                 return
             }
@@ -204,11 +308,11 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
     useEffect(() => {
         const off = requestQueue.on('done', (results) => {
             setProcessing(false)
-            const callback = exportAllOptions.find(o => o.label === exportType)?.callback
+            const callback = findExportAllOption(exportType)?.callback
             if (callback) callback(format, results, metaList)
         })
         return () => off()
-    }, [requestQueue, exportAllOptions, exportType, format, metaList])
+    }, [requestQueue, exportType, format, metaList])
 
     useEffect(() => {
         const off = archiveQueue.on('done', () => {
@@ -235,12 +339,7 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
 
         requestQueue.clear()
 
-        selected.forEach(({ id, title }) => {
-            requestQueue.add({
-                name: title,
-                request: () => fetchConversation(id, exportType !== 'JSON'),
-            })
-        })
+        createApiExportRequests(selected, exportType).forEach(request => requestQueue.add(request))
 
         requestQueue.start()
     }, [disabled, selected, requestQueue, exportType])
@@ -248,14 +347,18 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
     const exportAllFromLocal = useCallback(() => {
         if (disabled) return
 
-        const results = localConversations.filter(c => selected.some(s => s.id === c.id))
-        const callback = exportAllOptions.find(o => o.label === exportType)?.callback
-        if (callback) callback(format, results, metaList)
+        exportSelectedLocalConversations({
+            disabled,
+            selected,
+            localConversations,
+            exportType,
+            format,
+            metaList,
+        })
     }, [
         disabled,
         selected,
         localConversations,
-        exportAllOptions,
         exportType,
         format,
         metaList,
@@ -374,7 +477,7 @@ const DialogContent: FC<DialogContentProps> = ({ format }) => {
             />
             <div className="flex mt-6" style={{ justifyContent: 'space-between' }}>
                 <select className="Select" disabled={!bulkExportGate.allowed || processing} value={exportType} onChange={e => setExportType(e.currentTarget.value)}>
-                    {exportAllOptions.map(({ label }) => (
+                    {EXPORT_ALL_OPTIONS.map(({ label }) => (
                         <option key={t(label)} value={label}>{label}</option>
                     ))}
                 </select>
