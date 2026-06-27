@@ -280,7 +280,7 @@ loading, and timestamp injection. Screenshot export reads the current page DOM
 and does not call the backend API.
 
 1. Open **Export** -> **Exporter Settings**.
-2. In **API Auth**, click **Issue API Key**.
+2. In **API Auth**, click **Issue API key**.
 3. Keep the issued key if you need to unlock again later. The UI shows the
    plaintext key once, while the script stores a SHA-256 digest in Tampermonkey
    storage.
