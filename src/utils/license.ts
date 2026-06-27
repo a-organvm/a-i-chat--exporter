@@ -54,6 +54,8 @@ export interface LicenseStatus {
 /** The safe default returned whenever verification cannot succeed. */
 export const FREE_STATUS: LicenseStatus = Object.freeze({ valid: false, tier: 'free', features: [] })
 
+declare const __LEMONSQUEEZY_STORE_ID__: string
+
 function freeStatus(reason: string, payload?: LicensePayload): LicenseStatus {
     return { valid: false, tier: 'free', features: [], reason, payload }
 }
@@ -68,10 +70,12 @@ export const EXPORTER_PUBLIC_KEY_JWK: JsonWebKey | null = null
 const LEMON_SQUEEZY_VALIDATE_URL = 'https://api.lemonsqueezy.com/v1/licenses/validate'
 
 const LEMON_SQUEEZY_STORE_ID_INPUT =
-    ((import.meta.env as Record<string, string | undefined>).LEMONSQUEEZY_STORE_ID
-        ?? import.meta.env.VITE_LEMONSQUEEZY_STORE_ID
-        ?? '')
-        .trim()
+    (
+        (typeof __LEMONSQUEEZY_STORE_ID__ === 'string' ? __LEMONSQUEEZY_STORE_ID__ : '')
+        || import.meta.env.VITE_LEMONSQUEEZY_STORE_ID
+        || import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL
+        || ''
+    ).trim()
 
 function normalizeCheckoutInputUrl(value: string) {
     const trimmed = value.trim()

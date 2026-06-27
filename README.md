@@ -392,7 +392,7 @@ node scripts/build-site.mjs --build # always run pnpm run build first, then asse
 ```
 
 Set `LEMONSQUEEZY_STORE_ID` or `VITE_LEMONSQUEEZY_STORE_ID` at build time to
-enable the in-app **Buy Pro** button:
+enable the in-app **Buy Pro** button and the landing-page **Buy Pro** CTA:
 
 ```bash
 LEMONSQUEEZY_STORE_ID="https://your-store.lemonsqueezy.com/buy/..." pnpm build

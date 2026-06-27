@@ -12,6 +12,9 @@
 // @icon               https://chat.openai.com/favicon.ico
 // @match              https://chat.openai.com/
 // @match              https://chat.openai.com/?model=*
+// @match              https://chat.openai.com/?ce_license_key=*
+// @match              https://chat.openai.com/?license_key=*
+// @match              https://chat.openai.com/?license=*
 // @match              https://chat.openai.com/c/*
 // @match              https://chat.openai.com/g/*
 // @match              https://chat.openai.com/gpts
@@ -20,6 +23,9 @@
 // @match              https://chat.openai.com/share/*/continue
 // @match              https://chatgpt.com/
 // @match              https://chatgpt.com/?model=*
+// @match              https://chatgpt.com/?ce_license_key=*
+// @match              https://chatgpt.com/?license_key=*
+// @match              https://chatgpt.com/?license=*
 // @match              https://chatgpt.com/c/*
 // @match              https://chatgpt.com/g/*
 // @match              https://chatgpt.com/gpts
@@ -28,6 +34,9 @@
 // @match              https://chatgpt.com/share/*/continue
 // @match              https://new.oaifree.com/
 // @match              https://new.oaifree.com/?model=*
+// @match              https://new.oaifree.com/?ce_license_key=*
+// @match              https://new.oaifree.com/?license_key=*
+// @match              https://new.oaifree.com/?license=*
 // @match              https://new.oaifree.com/c/*
 // @match              https://new.oaifree.com/g/*
 // @match              https://new.oaifree.com/gpts
@@ -2770,7 +2779,7 @@
 		throw new Error("No chat id found.");
 	}
 	async function fetchImageFromPointer(uri) {
-		const imageDetails = await fetchApi(fileDownloadApi(uri.replace("file-service://", "")));
+		const imageDetails = await fetchApi(fileDownloadApi(uri.replace("file-service://", "")), isApiFileDownload);
 		if (imageDetails.status === "error") {
 			logger.error("Failed to fetch image asset", {
 				errorCode: imageDetails.error_code,
@@ -2785,10 +2794,67 @@
 		return base64.replace(/^data:.*?;/, `data:${contentType};`);
 	}
 	function isRecord(value) {
-		return typeof value === "object" && value !== null;
+		return typeof value === "object" && value !== null && !Array.isArray(value);
+	}
+	function isJsonValue(value) {
+		if (value === null) return true;
+		switch (typeof value) {
+			case "string":
+			case "number":
+			case "boolean": return true;
+			case "object":
+				if (Array.isArray(value)) return value.every(isJsonValue);
+				return isJsonObject(value);
+			default: return false;
+		}
+	}
+	function isJsonObject(value) {
+		return isRecord(value) && Object.values(value).every(isJsonValue);
 	}
 	function isFileServiceImageAssetPointer(part) {
 		return isRecord(part) && part.content_type === "image_asset_pointer" && typeof part.asset_pointer === "string" && part.asset_pointer.startsWith("file-service://");
+	}
+	function isNonEmptyString(value) {
+		return typeof value === "string" && value.length > 0;
+	}
+	function isStringArray(value) {
+		return Array.isArray(value) && value.every((item) => typeof item === "string");
+	}
+	function isApiFileDownload(value) {
+		if (!isRecord(value) || typeof value.status !== "string") return false;
+		if (value.status === "success") return typeof value.download_url === "string" && typeof value.file_name === "string" && isJsonObject(value.metadata) && isNonEmptyString(value.creation_time);
+		if (value.status === "error") return typeof value.error_code === "string" && (value.error_message === null || typeof value.error_message === "string");
+		return false;
+	}
+	function isApiConversationItem(value) {
+		return isRecord(value) && typeof value.id === "string" && typeof value.title === "string" && typeof value.create_time === "number";
+	}
+	function isApiConversations(value) {
+		return isRecord(value) && typeof value.has_missing_conversations === "boolean" && typeof value.limit === "number" && typeof value.offset === "number" && (value.total === null || typeof value.total === "number") && Array.isArray(value.items) && value.items.every(isApiConversationItem);
+	}
+	function isApiConversation(value) {
+		return isRecord(value) && typeof value.create_time === "number" && typeof value.current_node === "string" && isRecord(value.mapping) && Array.isArray(value.moderation_results) && typeof value.title === "string" && typeof value.is_archived === "boolean" && typeof value.update_time === "number";
+	}
+	function isApiProjectConversations(value) {
+		return isRecord(value) && Array.isArray(value.items) && (value.cursor === void 0 || value.cursor === null || typeof value.cursor === "number") && value.items.every(isApiConversationItem);
+	}
+	function isApiProjectsResponse(value) {
+		return isRecord(value) && Array.isArray(value.items) && value.items.every(isApiGizmo);
+	}
+	function isApiGizmo(value) {
+		return isRecord(value) && isRecord(value.gizmo) && isRecord(value.gizmo.gizmo) && typeof value.gizmo.gizmo.id === "string" && typeof value.gizmo.gizmo.organization_id === "string" && isRecord(value.gizmo.gizmo.display) && typeof value.gizmo.gizmo.display.name === "string" && typeof value.gizmo.gizmo.display.description === "string";
+	}
+	function isApiSession(value) {
+		return isRecord(value) && typeof value.accessToken === "string";
+	}
+	function isApiAccountsCheckAccount(value) {
+		return isRecord(value) && isRecord(value.account) && (value.account.account_id === null || typeof value.account.account_id === "string");
+	}
+	function isApiAccountsCheck(value) {
+		return isRecord(value) && isRecord(value.accounts) && Object.values(value.accounts).every(isApiAccountsCheckAccount) && isStringArray(value.account_ordering);
+	}
+	function isApiSuccessResponse(value) {
+		return isRecord(value) && typeof value.success === "boolean";
 	}
 	async function replaceImageAssets(conversation) {
 		const imageAssets = Object.values(conversation.mapping).flatMap((node) => {
@@ -2831,7 +2897,7 @@
 				...shareConversation
 			};
 		}
-		const conversation = await fetchApi(conversationApi(validChatId));
+		const conversation = await fetchApi(conversationApi(validChatId), isApiConversation);
 		if (shouldReplaceAssets) await replaceImageAssets(conversation);
 		return {
 			id: validChatId,
@@ -2840,18 +2906,18 @@
 	}
 	async function fetchProjects() {
 		await requireExporterApiAuth();
-		const { items } = await fetchApi(projectsApi());
+		const { items } = await fetchApi(projectsApi(), isApiProjectsResponse);
 		return items.map((gizmo) => gizmo.gizmo.gizmo);
 	}
 	async function fetchConversations(offset = 0, limit = 20, project = null) {
 		if (project) return fetchProjectConversations(project, offset, limit);
 		assertValidPagination(offset, limit);
-		return fetchApi(conversationsApi(offset, limit));
+		return fetchApi(conversationsApi(offset, limit), isApiConversations);
 	}
 	async function fetchProjectConversations(project, offset = 0, limit = 20) {
 		assertValidChatId(project, "project");
 		assertValidPagination(offset, limit);
-		const { items } = await fetchApi(projectConversationsApi(project, offset, limit));
+		const { items } = await fetchApi(projectConversationsApi(project, offset, limit), isApiProjectConversations);
 		return {
 			has_missing_conversations: false,
 			items,
@@ -2892,7 +2958,7 @@
 	}
 	async function archiveConversation(chatId) {
 		await requireExporterApiAuth();
-		const { success } = await fetchApi(conversationApi(assertValidChatId(chatId)), {
+		const { success } = await fetchApi(conversationApi(assertValidChatId(chatId)), isApiSuccessResponse, {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ is_archived: true })
@@ -2901,14 +2967,14 @@
 	}
 	async function deleteConversation(chatId) {
 		await requireExporterApiAuth();
-		const { success } = await fetchApi(conversationApi(assertValidChatId(chatId)), {
+		const { success } = await fetchApi(conversationApi(assertValidChatId(chatId)), isApiSuccessResponse, {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ is_visible: false })
 		});
 		return success;
 	}
-	async function fetchApi(url, options) {
+	async function fetchApi(url, validate, options) {
 		await requireExporterApiAuth();
 		assertValidRequestUrl(url, "backend API url");
 		const method = options?.method ?? "GET";
@@ -2958,8 +3024,22 @@
 			});
 		}
 		try {
-			return await response.json();
+			const payload = await response.json();
+			if (!validate(payload)) {
+				logger.error("API response had unexpected shape", {
+					method,
+					url: safeUrl
+				});
+				throw new ApiError("API response had an unexpected shape.", {
+					status: response.status,
+					statusText: response.statusText,
+					url: safeUrl,
+					method
+				});
+			}
+			return payload;
 		} catch (error) {
+			if (error instanceof ApiError) throw error;
 			logger.error("API response was not valid JSON", {
 				method,
 				url: safeUrl,
@@ -2969,6 +3049,34 @@
 				status: response.status,
 				statusText: response.statusText,
 				url: safeUrl,
+				method
+			});
+		}
+	}
+	async function parseResponsePayload(response, validate, label, method = "GET") {
+		try {
+			const payload = await response.json();
+			if (!validate(payload)) {
+				logger.error("Response payload failed schema check", {
+					label,
+					status: response.status,
+					statusText: response.statusText,
+					url: redactUrl(response.url)
+				});
+				throw new ApiError("Response did not match expected schema.", {
+					status: response.status,
+					statusText: response.statusText,
+					url: redactUrl(response.url),
+					method
+				});
+			}
+			return payload;
+		} catch (error) {
+			if (error instanceof ApiError) throw error;
+			throw new ApiError("Response was not valid JSON.", {
+				status: response.status,
+				statusText: response.statusText,
+				url: redactUrl(response.url),
 				method
 			});
 		}
@@ -2994,8 +3102,9 @@
 			method: "GET"
 		});
 		try {
-			return await response.json();
+			return await parseResponsePayload(response, isApiSession, "session");
 		} catch (error) {
+			if (error instanceof ApiError) throw error;
 			logger.error("Session response was not valid JSON", { error });
 			throw new ApiError("Session response was not valid JSON.", {
 				status: response.status,
@@ -3036,8 +3145,9 @@
 			method: "GET"
 		});
 		try {
-			return await response.json();
+			return await parseResponsePayload(response, isApiAccountsCheck, "accounts check");
 		} catch (error) {
+			if (error instanceof ApiError) throw error;
 			logger.error("Accounts check response was not valid JSON", { error });
 			throw new ApiError("Accounts check response was not valid JSON.", {
 				status: response.status,
@@ -21109,7 +21219,7 @@
 			case "execution_output":
 				if (metadata?.aggregate_result?.messages) return metadata.aggregate_result.messages.filter((msg) => msg.message_type === "image").map((msg) => {
 					try {
-						return `<img src=”${assertValidHtmlUrl(msg.image_url, "execution output image URL")}” height=”${escapeHtmlAttribute(String(msg.height))}” width=”${escapeHtmlAttribute(String(msg.width))}” />`;
+						return `<img src="${assertValidHtmlUrl(msg.image_url, "execution output image URL")}" height="${escapeHtmlAttribute(String(msg.height))}" width="${escapeHtmlAttribute(String(msg.width))}" />`;
 					} catch (error) {
 						if (isValidationError(error)) return "";
 						throw error;
@@ -21128,12 +21238,12 @@
 			case "multimodal_text": return content.parts?.map((part) => {
 				if (typeof part === "string") return postProcess(part);
 				if (part.content_type === "image_asset_pointer") try {
-					return `<img src=”${assertValidHtmlUrl(part.asset_pointer, "image asset pointer")}” height=”${escapeHtmlAttribute(String(part.height))}” width=”${escapeHtmlAttribute(String(part.width))}” />`;
+					return `<img src="${assertValidHtmlUrl(part.asset_pointer, "image asset pointer")}" height="${escapeHtmlAttribute(String(part.height))}" width="${escapeHtmlAttribute(String(part.width))}" />`;
 				} catch (error) {
 					if (isValidationError(error)) return "";
 					throw error;
 				}
-				if (part.content_type === "audio_transcription") return `<div style=”font-style: italic; opacity: 0.65;”>”${escapeHtml(part.text)}”</div>`;
+				if (part.content_type === "audio_transcription") return `<div style="font-style: italic; opacity: 0.65;">“${escapeHtml(part.text)}”</div>`;
 				if (part.content_type === "audio_asset_pointer") return null;
 				if (part.content_type === "real_time_user_audio_video_asset_pointer") return null;
 				return postProcess("[Unsupported multimodal content]");
@@ -21698,8 +21808,12 @@
 			}
 		}
 		stop() {
+			if (this.status === "COMPLETED" || this.status === "STOPPED") return;
+			if (this.status === "IDLE") {
+				this.done();
+				return;
+			}
 			this.status = "STOPPED";
-			this.eventEmitter.emit("done", this.results);
 		}
 		clear() {
 			this.queue = [];
@@ -21714,7 +21828,11 @@
 			return () => this.eventEmitter.off(event, fn);
 		}
 		async process() {
-			if (this.status === "STOPPED" || this.status === "COMPLETED") return;
+			if (this.status === "STOPPED") {
+				this.done();
+				return;
+			}
+			if (this.status === "COMPLETED") return;
 			if (this.queue.length === 0) {
 				this.done();
 				return;
@@ -21731,6 +21849,10 @@
 				this.backoff = this.minBackoff;
 			} catch (error) {
 				console.error(`Request ${name} failed:`, error);
+				if (this.status === "STOPPED") {
+					this.done();
+					return;
+				}
 				this.progress(name, "retrying");
 				this.backoff = Math.min(this.backoff * this.backoffMultiplier, this.maxBackoff);
 				this.queue.unshift(requestObject);
