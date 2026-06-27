@@ -34,7 +34,7 @@ ChatGPT Exporter is a browser userscript that adds a five-format export menu to 
   - Conversation management: archive or delete multiple conversations via the API
 
 **Technical details:**
-- Built in TypeScript + Preact, compiled to a single ~50KB userscript.
+- Built in TypeScript + Preact, compiled to a single userscript (~870KB bundled; JSZip and html2canvas load from jsDelivr CDN at runtime).
 - Markdown exporter uses mdast AST normalization to preserve LaTeX and convert ChatGPT’s custom footnote syntax to markdown footnotes.
 - Bulk export uses a smart rate-limited request queue (200ms/1600ms backoff) to avoid throttling ChatGPT’s API.
 - Extensible provider architecture scaffolds Claude and Gemini support (deferred — foundation-only today).
@@ -79,7 +79,7 @@ Pro tier ($): for people who export at scale:
 
 **Real context:**
 
-- Built in TypeScript + Preact. Single userscript file (~50KB).
+- Built in TypeScript + Preact. Single userscript file (~870KB; JSZip + html2canvas load from CDN).
 - Distributed primarily via GreasyFork (one of the highest-traffic ChatGPT utility scripts there).
 - Localized in 9 languages.
 - Open source (MIT). Active maintenance, no abandoned features.
