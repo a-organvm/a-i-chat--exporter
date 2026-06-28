@@ -264,7 +264,9 @@ published userscript files:
 The userscript metadata in [`vite.config.ts`](./vite.config.ts) matches these
 hosts: `chatgpt.com`, `chat.openai.com`, and `new.oaifree.com`. It runs on the
 root page, `?model=*`, `/c/*`, `/g/*`, `/gpts`, `/gpts/*`, `/share/*`, and
-`/share/*/continue` paths for those hosts.
+`/share/*/continue` paths for those hosts. It also matches `?ce_license_key=*`,
+`?license_key=*`, and `?license=*` query strings so that a Pro license key
+returned from the Lemon Squeezy checkout is captured automatically.
 
 ### Run it in ChatGPT
 

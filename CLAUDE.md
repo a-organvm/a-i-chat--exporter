@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm install         # Install dependencies
 pnpm run dev         # Vite dev server (for local testing)
 pnpm run build       # Vite build → dist/ (load unpacked in Chrome)
-pnpm run test        # TypeScript typecheck only (tsc --noEmit) — no test suite
+pnpm run test        # vitest run (unit tests in src/__tests__/) + tsc --noEmit
 pnpm run lint        # ESLint
 pnpm run lint:fix    # ESLint with auto-fix
 ```
@@ -41,7 +41,7 @@ Browser extension built with TypeScript + Vite. Output in `dist/` — load as un
 
 ## Notes
 
-- No formal test suite — `npm test` only typechecks
+- Test suite: `pnpm test` runs vitest unit tests (`src/__tests__/`) then typechecks with `tsc --noEmit`
 - Multilingual READMEs: `README_FR.md`, `README_ID.md`, `README_KR.md`, `README_TR.md`
 
 <!-- ORGANVM:AUTO:START -->
