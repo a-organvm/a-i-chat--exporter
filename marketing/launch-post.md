@@ -52,8 +52,8 @@ ChatGPT Exporter is a browser userscript that adds a five-format export menu to 
 
 **Distribution:**
 - GreasyFork: [Install here](https://greasyfork.org/scripts/456055-chatgpt-exporter) — one of the highest-traffic ChatGPT utility scripts.
-- GitHub raw: [Direct install](https://raw.githubusercontent.com/organvm-iii-ergon/a-i-chat--exporter/master/dist/chatgpt.user.js).
-- Open source (MIT): [organvm-iii-ergon/a-i-chat--exporter](https://github.com/organvm-iii-ergon/a-i-chat--exporter).
+- GitHub raw: [Direct install](https://raw.githubusercontent.com/organvm/a-i-chat--exporter/master/dist/chatgpt.user.js).
+- Open source (MIT): [organvm/a-i-chat--exporter](https://github.com/organvm/a-i-chat--exporter).
 
 **Status:** v2.29.1, production, actively maintained.
 
@@ -97,7 +97,7 @@ Pro tier ($): for people who export at scale:
 
 **Install:**
 - GreasyFork: [https://greasyfork.org/scripts/456055-chatgpt-exporter](https://greasyfork.org/scripts/456055-chatgpt-exporter)
-- GitHub: [organvm-iii-ergon/a-i-chat--exporter](https://github.com/organvm-iii-ergon/a-i-chat--exporter)
+- GitHub: [organvm/a-i-chat--exporter](https://github.com/organvm/a-i-chat--exporter)
 
 Happy to answer questions or take feedback on the Pro tier, additional export formats, or edge cases in screenshot generation.
 
@@ -119,7 +119,7 @@ Free: single conversation export. Pro: bulk export, JSON import, TavernAI/Ooba c
 
 All processing in your browser. No backend. 9-language localization.
 
-https://github.com/organvm-iii-ergon/a-i-chat--exporter
+https://github.com/organvm/a-i-chat--exporter
 
 ### Variant 3: Use-case focus
 If you save ChatGPT conversations for research or knowledge work: ChatGPT Exporter exports them as Markdown (with YAML front matter), self-contained HTML (dark theme + LaTeX rendering), JSON, PNG, or text.
@@ -144,7 +144,7 @@ The problem is simple: ChatGPT conversations are ephemeral. OpenAI doesn't expor
 4/ Built in TypeScript + Preact. Distributed via GreasyFork (one of the highest-traffic ChatGPT utility scripts). Open source. Actively maintained.
 
 Install: https://greasyfork.org/scripts/456055-chatgpt-exporter
-Repo: https://github.com/organvm-iii-ergon/a-i-chat--exporter
+Repo: https://github.com/organvm/a-i-chat--exporter
 
 ---
 
