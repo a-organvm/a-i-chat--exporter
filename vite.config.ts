@@ -3,12 +3,16 @@ import { defineConfig } from 'vite'
 import monkey, { cdn } from 'vite-plugin-monkey'
 import packageJson from './package.json'
 
-const lemonSqueezyStoreId = process.env.LEMONSQUEEZY_STORE_ID ?? ''
+const lemonSqueezyCheckoutUrl =
+    process.env.LEMONSQUEEZY_STORE_ID
+    || process.env.VITE_LEMONSQUEEZY_STORE_ID
+    || process.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL
+    || ''
 
 // https://vitejs.dev/config/
 export default defineConfig({
     define: {
-        __LEMONSQUEEZY_STORE_ID__: JSON.stringify(lemonSqueezyStoreId),
+        __LEMONSQUEEZY_STORE_ID__: JSON.stringify(lemonSqueezyCheckoutUrl),
     },
     plugins: [
         preact({
