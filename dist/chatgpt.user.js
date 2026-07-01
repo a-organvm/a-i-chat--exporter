@@ -22588,30 +22588,60 @@
 			]
 		})] });
 	};
+	var EXPORT_ALL_OPTIONS = [
+		{
+			label: "Markdown",
+			callback: exportAllToMarkdown
+		},
+		{
+			label: "HTML",
+			callback: exportAllToHtml
+		},
+		{
+			label: "JSON",
+			callback: exportAllToOfficialJson
+		},
+		{
+			label: "JSON (ZIP)",
+			callback: exportAllToJson
+		}
+	];
+	function isBulkExportDisabled({ bulkExportAllowed, loading, processing, error, selectedCount }) {
+		return !bulkExportAllowed || loading || processing || !!error || selectedCount === 0;
+	}
+	function findExportAllOption(exportType, options = EXPORT_ALL_OPTIONS) {
+		return options.find((o) => o.label === exportType);
+	}
+	function parseLocalConversationsUpload(fileContents) {
+		const data = JSON.parse(fileContents);
+		return Array.isArray(data) ? data : null;
+	}
+	function getSelectedLocalConversations(localConversations, selected) {
+		const selectedIds = new Set(selected.map((c) => c.id));
+		return localConversations.filter((c) => selectedIds.has(c.id));
+	}
+	function shouldFetchConversationWithHistory(exportType) {
+		return exportType !== "JSON";
+	}
+	function createApiExportRequests(selected, exportType, fetchConversationForExport = fetchConversation) {
+		return selected.map(({ id, title }) => ({
+			name: title,
+			request: () => fetchConversationForExport(id, shouldFetchConversationWithHistory(exportType))
+		}));
+	}
+	function exportSelectedLocalConversations({ disabled, localConversations, selected, exportType, format, metaList, exportOptions = EXPORT_ALL_OPTIONS }) {
+		if (disabled) return false;
+		const callback = findExportAllOption(exportType, exportOptions)?.callback;
+		if (!callback) return false;
+		callback(format, getSelectedLocalConversations(localConversations, selected), metaList);
+		return true;
+	}
 	var DialogContent = ({ format }) => {
 		const { t } = useTranslation();
 		const { enableMeta, exportMetaList, exportAllLimit, checkProFeature } = useSettingContext();
 		const metaList = T$1(() => enableMeta ? exportMetaList : [], [enableMeta, exportMetaList]);
 		const bulkExportGate = T$1(() => checkProFeature(PRO_FEATURES.bulkExport), [checkProFeature]);
 		const multiProviderExportGate = T$1(() => checkProFeature(PRO_FEATURES.multiProviderExport), [checkProFeature]);
-		const exportAllOptions = T$1(() => [
-			{
-				label: "Markdown",
-				callback: exportAllToMarkdown
-			},
-			{
-				label: "HTML",
-				callback: exportAllToHtml
-			},
-			{
-				label: "JSON",
-				callback: exportAllToOfficialJson
-			},
-			{
-				label: "JSON (ZIP)",
-				callback: exportAllToJson
-			}
-		], []);
 		const fileInputRef = A$2(null);
 		const [exportSource, setExportSource] = d$1("API");
 		const [apiConversations, setApiConversations] = d$1([]);
@@ -22623,8 +22653,14 @@
 		const [processing, setProcessing] = d$1(false);
 		const [selectedProject, setSelectedProject] = d$1(null);
 		const [selected, setSelected] = d$1([]);
-		const [exportType, setExportType] = d$1(exportAllOptions[0].label);
-		const disabled = !bulkExportGate.allowed || loading || processing || !!error || selected.length === 0;
+		const [exportType, setExportType] = d$1(EXPORT_ALL_OPTIONS[0].label);
+		const disabled = isBulkExportDisabled({
+			bulkExportAllowed: bulkExportGate.allowed,
+			loading,
+			processing,
+			error,
+			selectedCount: selected.length
+		});
 		const requestQueue = T$1(() => new RequestQueue(200, 1600), []);
 		const archiveQueue = T$1(() => new RequestQueue(200, 1600), []);
 		const deleteQueue = T$1(() => new RequestQueue(200, 1600), []);
@@ -22643,8 +22679,8 @@
 			if (!file) return;
 			const fileReader = new FileReader();
 			fileReader.onload = () => {
-				const data = JSON.parse(fileReader.result);
-				if (!Array.isArray(data)) {
+				const data = parseLocalConversationsUpload(fileReader.result);
+				if (!data) {
 					alert(t("Invalid File Format"));
 					return;
 				}
@@ -22683,13 +22719,12 @@
 		y$1(() => {
 			const off = requestQueue.on("done", (results) => {
 				setProcessing(false);
-				const callback = exportAllOptions.find((o) => o.label === exportType)?.callback;
+				const callback = findExportAllOption(exportType)?.callback;
 				if (callback) callback(format, results, metaList);
 			});
 			return () => off();
 		}, [
 			requestQueue,
-			exportAllOptions,
 			exportType,
 			format,
 			metaList
@@ -22725,12 +22760,7 @@
 		const exportAllFromApi = q$1(() => {
 			if (disabled) return;
 			requestQueue.clear();
-			selected.forEach(({ id, title }) => {
-				requestQueue.add({
-					name: title,
-					request: () => fetchConversation(id, exportType !== "JSON")
-				});
-			});
+			createApiExportRequests(selected, exportType).forEach((request) => requestQueue.add(request));
 			requestQueue.start();
 		}, [
 			disabled,
@@ -22740,14 +22770,18 @@
 		]);
 		const exportAllFromLocal = q$1(() => {
 			if (disabled) return;
-			const results = localConversations.filter((c) => selected.some((s) => s.id === c.id));
-			const callback = exportAllOptions.find((o) => o.label === exportType)?.callback;
-			if (callback) callback(format, results, metaList);
+			exportSelectedLocalConversations({
+				disabled,
+				selected,
+				localConversations,
+				exportType,
+				format,
+				metaList
+			});
 		}, [
 			disabled,
 			selected,
 			localConversations,
-			exportAllOptions,
 			exportType,
 			format,
 			metaList
@@ -22874,7 +22908,7 @@
 						disabled: !bulkExportGate.allowed || processing,
 						value: exportType,
 						onChange: (e) => setExportType(e.currentTarget.value),
-						children: exportAllOptions.map(({ label }) => u$3("option", {
+						children: EXPORT_ALL_OPTIONS.map(({ label }) => u$3("option", {
 							value: label,
 							children: label
 						}, t(label)))
