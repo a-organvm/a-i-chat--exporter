@@ -22,7 +22,7 @@ Other targets:
 
 ```bash
 pnpm run deploy:vercel      # deploy to Vercel       (needs `vercel login` once)
-pnpm run deploy:cloudflare  # deploy to Cloudflare Pages (needs `wrangler login` once)
+pnpm run deploy:cloudflare  # deploy to Cloudflare Pages (set CLOUDFLARE_API_TOKEN — no login)
 ```
 
 ---
@@ -100,10 +100,17 @@ also import the repo in the Vercel dashboard — no extra config needed.
 
 ## Option 3 — Cloudflare Pages
 
+Cloudflare Pages authenticates with a **scoped API token**, not an interactive login.
+Mint one at **Cloudflare Dashboard → My Profile → API Tokens** and pass it via the
+environment — the same `CLOUDFLARE_API_TOKEN` the CI deploy uses (see below):
+
 ```bash
-npx wrangler login          # once
-pnpm run deploy:cloudflare  # wrangler pages deploy dist-site --project-name chatgpt-exporter
+export CLOUDFLARE_API_TOKEN=…   # scoped token — headless, no `wrangler login`
+pnpm run deploy:cloudflare      # wrangler pages deploy dist-site --project-name chatgpt-exporter
 ```
+
+Setting `CLOUDFLARE_API_TOKEN` makes wrangler run headless — the same way the GitHub
+Actions deploy authenticates, so it's one credential pattern for local and CI alike.
 
 The `_headers` file in `dist-site/` sets the userscript content-type. For
 dashboard-based Pages projects, use build command `pnpm run site:build` and output
